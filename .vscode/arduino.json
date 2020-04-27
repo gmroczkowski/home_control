@@ -1,0 +1,7 @@
+{
+    "sketch": "home_control_V_0_07_alfa.ino",
+    "board": "arduino:avr:uno",
+    "programmer": "AVRISP mkII",
+    "output": "build",
+    "port": "COM5"
+}
