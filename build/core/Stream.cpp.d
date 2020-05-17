@@ -1,4 +1,4 @@
-c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\core\Stream.cpp.o: \
+c:\Users\gmroczkowski\Documents\Arduino\home_control\build\core\Stream.cpp.o: \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\Stream.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino\binary.h \

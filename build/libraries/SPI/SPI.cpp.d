@@ -1,4 +1,4 @@
-c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\libraries\SPI\SPI.cpp.o: \
+c:\Users\gmroczkowski\Documents\Arduino\home_control\build\libraries\SPI\SPI.cpp.o: \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\libraries\SPI\src\SPI.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\libraries\SPI\src\SPI.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \

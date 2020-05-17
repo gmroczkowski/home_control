@@ -10,32 +10,32 @@
     "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\standard"
   },
   {
-    "Sourcefile": "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "SPI.h",
     "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\SPI\\src"
   },
   {
-    "Sourcefile": "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "Ethernet.h",
     "Includepath": "C:\\Program Files (x86)\\Arduino\\libraries\\Ethernet\\src"
   },
   {
-    "Sourcefile": "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "TimeLord.h",
-    "Includepath": "C:\\Users\\Grzes\\Documents\\Arduino\\libraries\\TimeLord-master"
+    "Includepath": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\TimeLord-master"
   },
   {
-    "Sourcefile": "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "OneWire.h",
-    "Includepath": "C:\\Users\\Grzes\\Documents\\Arduino\\libraries\\OneWire"
+    "Includepath": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\OneWire"
   },
   {
-    "Sourcefile": "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "DS18B20.h",
-    "Includepath": "C:\\Users\\Grzes\\Documents\\Arduino\\libraries\\DS18B20"
+    "Includepath": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\DS18B20"
   },
   {
-    "Sourcefile": "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "",
     "Includepath": null
   },
@@ -85,17 +85,17 @@
     "Includepath": null
   },
   {
-    "Sourcefile": "C:\\Users\\Grzes\\Documents\\Arduino\\libraries\\TimeLord-master\\TimeLord.cpp",
+    "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\TimeLord-master\\TimeLord.cpp",
     "Include": "",
     "Includepath": null
   },
   {
-    "Sourcefile": "C:\\Users\\Grzes\\Documents\\Arduino\\libraries\\OneWire\\OneWire.cpp",
+    "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\OneWire\\OneWire.cpp",
     "Include": "",
     "Includepath": null
   },
   {
-    "Sourcefile": "C:\\Users\\Grzes\\Documents\\Arduino\\libraries\\DS18B20\\DS18B20.cpp",
+    "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\DS18B20\\DS18B20.cpp",
     "Include": "",
     "Includepath": null
   }

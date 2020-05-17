@@ -1,5 +1,5 @@
-c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\sketch\home_control_V_0_07_alfa.ino.cpp.o: \
- c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\sketch\home_control_V_0_07_alfa.ino.cpp \
+c:\Users\gmroczkowski\Documents\Arduino\home_control\build\sketch\home_control_V_0_07_alfa.ino.cpp.o: \
+ c:\Users\gmroczkowski\Documents\Arduino\home_control\build\sketch\home_control_V_0_07_alfa.ino.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WCharacter.h \
@@ -19,12 +19,12 @@ c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\sketch\home_cont
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Udp.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Stream.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/IPAddress.h \
- C:\Users\Grzes\Documents\Arduino\libraries\TimeLord-master/TimeLord.h \
- C:\Users\Grzes\Documents\Arduino\libraries\OneWire/OneWire.h \
- C:\Users\Grzes\Documents\Arduino\libraries\DS18B20/DS18B20.h \
- C:\Users\Grzes\Documents\Arduino\libraries\Timer.h \
- C:\Users\Grzes\Documents\Arduino\libraries\Timer.cpp \
- C:\Users\Grzes\Documents\Arduino\libraries\Timer.h \
- C:\Users\Grzes\Documents\Arduino\libraries\RTC.h \
- C:\Users\Grzes\Documents\Arduino\libraries\RTC.cpp \
- C:\Users\Grzes\Documents\Arduino\libraries\sunState.cpp
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\TimeLord-master/TimeLord.h \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\OneWire/OneWire.h \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\DS18B20/DS18B20.h \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.cpp \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp

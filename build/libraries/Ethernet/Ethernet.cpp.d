@@ -1,4 +1,4 @@
-c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\libraries\Ethernet\Ethernet.cpp.o: \
+c:\Users\gmroczkowski\Documents\Arduino\home_control\build\libraries\Ethernet\Ethernet.cpp.o: \
  C:\Program\ Files\ (x86)\Arduino\libraries\Ethernet\src\Ethernet.cpp \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \

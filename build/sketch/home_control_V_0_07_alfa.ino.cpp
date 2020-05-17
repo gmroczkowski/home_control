@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#line 1 "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\home_control_V_0_07_alfa.ino"
+#line 1 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 /*
   Web Server
 
@@ -45,10 +45,10 @@
 #include <TimeLord.h>
 #include <OneWire.h>
 #include <DS18B20.h>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\Timer.h>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\Timer.cpp>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\RTC.h>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\RTC.cpp>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.cpp>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp>
 
 #define pin_DL 0 //droping line
 #define pin_Z1 1 //Z1 watering circut
@@ -87,7 +87,7 @@ TimeLord tardis;           //initialize sunState :)
 OneWire onewire(pin_TS);   //Dallas temperature sensors
 DS18B20 sensors(&onewire); //Dallas temperature sensors
 
-#include <C:\Users\Grzes\Documents\Arduino\libraries\sunState.cpp>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp>
 
 sunState slonce;
 
@@ -167,13 +167,13 @@ EthernetServer server(80);
 
 boolean trigger(byte);
 
-#line 168 "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\home_control_V_0_07_alfa.ino"
+#line 168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup();
-#line 243 "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\home_control_V_0_07_alfa.ino"
+#line 243 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 789 "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\home_control_V_0_07_alfa.ino"
+#line 789 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 168 "c:\\Users\\Grzes\\Documents\\Arduino\\home_control_V_0_07_alfa\\home_control_V_0_07_alfa.ino"
+#line 168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
 {
 

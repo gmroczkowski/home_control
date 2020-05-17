@@ -1,3 +1,3 @@
-c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\libraries\TimeLord-master\TimeLord.cpp.o: \
- C:\Users\Grzes\Documents\Arduino\libraries\TimeLord-master\TimeLord.cpp \
- C:\Users\Grzes\Documents\Arduino\libraries\TimeLord-master\TimeLord.h
+c:\Users\gmroczkowski\Documents\Arduino\home_control\build\libraries\TimeLord-master\TimeLord.cpp.o: \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\TimeLord-master\TimeLord.cpp \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\TimeLord-master\TimeLord.h

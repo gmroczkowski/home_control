@@ -1,6 +1,6 @@
-c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\libraries\OneWire\OneWire.cpp.o: \
- C:\Users\Grzes\Documents\Arduino\libraries\OneWire\OneWire.cpp \
- C:\Users\Grzes\Documents\Arduino\libraries\OneWire\OneWire.h \
+c:\Users\gmroczkowski\Documents\Arduino\home_control\build\libraries\OneWire\OneWire.cpp.o: \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\OneWire\OneWire.cpp \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\OneWire\OneWire.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WCharacter.h \

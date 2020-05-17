@@ -1,6 +1,6 @@
-c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\libraries\DS18B20\DS18B20.cpp.o: \
- C:\Users\Grzes\Documents\Arduino\libraries\DS18B20\DS18B20.cpp \
- C:\Users\Grzes\Documents\Arduino\libraries\DS18B20\DS18B20.h \
+c:\Users\gmroczkowski\Documents\Arduino\home_control\build\libraries\DS18B20\DS18B20.cpp.o: \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\DS18B20\DS18B20.cpp \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\DS18B20\DS18B20.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WCharacter.h \
@@ -12,4 +12,4 @@ c:\Users\Grzes\Documents\Arduino\home_control_V_0_07_alfa\build\libraries\DS18B2
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/USBAPI.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\variants\standard/pins_arduino.h \
- C:\Users\Grzes\Documents\Arduino\libraries\OneWire/OneWire.h
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\OneWire/OneWire.h

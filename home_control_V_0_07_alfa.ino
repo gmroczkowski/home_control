@@ -43,10 +43,10 @@
 #include <TimeLord.h>
 #include <OneWire.h>
 #include <DS18B20.h>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\Timer.h>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\Timer.cpp>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\RTC.h>
-#include <C:\Users\Grzes\Documents\Arduino\libraries\RTC.cpp>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.cpp>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp>
 
 #define pin_DL 0 //droping line
 #define pin_Z1 1 //Z1 watering circut
@@ -85,7 +85,7 @@ TimeLord tardis;           //initialize sunState :)
 OneWire onewire(pin_TS);   //Dallas temperature sensors
 DS18B20 sensors(&onewire); //Dallas temperature sensors
 
-#include <C:\Users\Grzes\Documents\Arduino\libraries\sunState.cpp>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp>
 
 sunState slonce;
 
