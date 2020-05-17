@@ -11,4 +11,4 @@ c:\Users\gmroczkowski\Documents\Arduino\home_control\build\libraries\OneWire\One
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Printable.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/USBAPI.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
- C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\variants\standard/pins_arduino.h
+ C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\variants\mega/pins_arduino.h

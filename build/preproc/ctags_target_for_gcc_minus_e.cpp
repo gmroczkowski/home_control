@@ -89,7 +89,7 @@ float const LATITUDE = 52.216021;
 Timer odliczanie; //initialize software timer
 RTC zegar; //initialize software clock
 TimeLord tardis; //initialize sunState :)
-OneWire onewire(6 /*Dallas temperature sensors*/); //Dallas temperature sensors
+OneWire onewire(31 /*Dallas temperature sensors*/); //Dallas temperature sensors
 DS18B20 sensors(&onewire); //Dallas temperature sensors
 
 # 89 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 2
@@ -162,8 +162,8 @@ const long timeoutTime = 2000;
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
 byte mac[] = {
-    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-IPAddress ip(172, 26, 160, 17);
+    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xE8};
+IPAddress ip(172, 26, 160, 16);
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
@@ -177,23 +177,23 @@ void setup()
 
     //-----------------From random nerd tutorials:
     // Initialize the output variables as outputs
-    pinMode(0 /*droping line*/, 0x1);
-    pinMode(1 /*Z1 watering circut*/, 0x1);
-    pinMode(2 /*Z2 watering circut*/, 0x1);
-    pinMode(4 /*Blinds up*/, 0x1);
-    pinMode(5 /*Blinss down*/, 0x1);
-    pinMode(3 /*Blinds stop*/, 0x1);
-    pinMode(7 /*Heating upstairs*/, 0x1);
-    pinMode(8 /*Heating downstairs*/, 0x1);
+    pinMode(22 /*droping line*/, 0x1);
+    pinMode(23 /*Z1 watering circut*/, 0x1);
+    pinMode(24 /*Z2 watering circut*/, 0x1);
+    pinMode(26 /*Blinds up*/, 0x1);
+    pinMode(27 /*Blinss down*/, 0x1);
+    pinMode(25 /*Blinds stop*/, 0x1);
+    pinMode(28 /*Heating upstairs*/, 0x1);
+    pinMode(29 /*Heating downstairs*/, 0x1);
     // Set outputs to HIGH
-    digitalWrite(0 /*droping line*/, 0x1);
-    digitalWrite(1 /*Z1 watering circut*/, 0x1);
-    digitalWrite(2 /*Z2 watering circut*/, 0x1);
-    digitalWrite(4 /*Blinds up*/, 0x1);
-    digitalWrite(5 /*Blinss down*/, 0x1);
-    digitalWrite(3 /*Blinds stop*/, 0x1);
-    digitalWrite(7 /*Heating upstairs*/, 0x1);
-    digitalWrite(8 /*Heating downstairs*/, 0x1);
+    digitalWrite(22 /*droping line*/, 0x1);
+    digitalWrite(23 /*Z1 watering circut*/, 0x1);
+    digitalWrite(24 /*Z2 watering circut*/, 0x1);
+    digitalWrite(26 /*Blinds up*/, 0x1);
+    digitalWrite(27 /*Blinss down*/, 0x1);
+    digitalWrite(25 /*Blinds stop*/, 0x1);
+    digitalWrite(28 /*Heating upstairs*/, 0x1);
+    digitalWrite(29 /*Heating downstairs*/, 0x1);
 
     for (int i = 0; i < 5; i++)
         lockTrigger[i] = false;
@@ -1215,74 +1215,74 @@ void loop()
 
     if (odliczanie.checkTimer(14)) //Turn on watering by Z2
     {
-        digitalWrite(2 /*Z2 watering circut*/, 0x0);
+        digitalWrite(24 /*Z2 watering circut*/, 0x0);
     }
     else
     {
-        digitalWrite(2 /*Z2 watering circut*/, 0x1);
+        digitalWrite(24 /*Z2 watering circut*/, 0x1);
     };
 
     if (odliczanie.checkTimer(13)) //Turn on watering by Z1
     {
-        digitalWrite(1 /*Z1 watering circut*/, 0x0);
+        digitalWrite(23 /*Z1 watering circut*/, 0x0);
     }
     else
     {
-        digitalWrite(1 /*Z1 watering circut*/, 0x1);
+        digitalWrite(23 /*Z1 watering circut*/, 0x1);
     };
 
     if (odliczanie.checkTimer(12)) //Turn on watering by LK
     {
-        digitalWrite(0 /*droping line*/, 0x0);
+        digitalWrite(22 /*droping line*/, 0x0);
     }
     else
     {
-        digitalWrite(0 /*droping line*/, 0x1);
+        digitalWrite(22 /*droping line*/, 0x1);
     };
 
     if (odliczanie.checkTimer(9)) //Turn on force to heat downstairs
     {
-        digitalWrite(8 /*Heating downstairs*/, 0x0);
+        digitalWrite(29 /*Heating downstairs*/, 0x0);
     }
     else
     {
-        digitalWrite(8 /*Heating downstairs*/, 0x1);
+        digitalWrite(29 /*Heating downstairs*/, 0x1);
     };
 
     if (odliczanie.checkTimer(7)) //Turn on force to heat upstairs
     {
-        digitalWrite(7 /*Heating upstairs*/, 0x0);
+        digitalWrite(28 /*Heating upstairs*/, 0x0);
     }
     else
     {
-        digitalWrite(7 /*Heating upstairs*/, 0x1);
+        digitalWrite(28 /*Heating upstairs*/, 0x1);
     };
 
     if (odliczanie.checkTimer(5)) //Blins up
     {
-        digitalWrite(4 /*Blinds up*/, 0x0);
+        digitalWrite(26 /*Blinds up*/, 0x0);
     }
     else
     {
-        digitalWrite(4 /*Blinds up*/, 0x1);
+        digitalWrite(26 /*Blinds up*/, 0x1);
     };
 
     if (odliczanie.checkTimer(4)) //Blinds down
     {
-        digitalWrite(5 /*Blinss down*/, 0x0);
+        digitalWrite(27 /*Blinss down*/, 0x0);
     }
     else
     {
-        digitalWrite(5 /*Blinss down*/, 0x1);
+        digitalWrite(27 /*Blinss down*/, 0x1);
     };
 
     if (odliczanie.checkTimer(3)) //Blinds stop
     {
-        digitalWrite(3 /*Blinds stop*/, 0x0);
+        digitalWrite(25 /*Blinds stop*/, 0x0);
     }
     else
     {
-        digitalWrite(3 /*Blinds stop*/, 0x1);
+        digitalWrite(25 /*Blinds stop*/, 0x1);
     };
 
     if (podlewanieCykl == 1) //Starting watering cycle

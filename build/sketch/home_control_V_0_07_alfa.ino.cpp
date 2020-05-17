@@ -50,16 +50,16 @@
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp>
 
-#define pin_DL 0 //droping line
-#define pin_Z1 1 //Z1 watering circut
-#define pin_Z2 2 //Z2 watering circut
-#define pin_BS 3 //Blinds stop
-#define pin_BU 4 //Blinds up
-#define pin_BD 5 //Blinss down
-#define pin_TS 6 //Dallas temperature sensors
-#define pin_HU 7 //Heating upstairs
-#define pin_HD 8 //Heating downstairs
-#define pin_RS 9 //Rain sensor
+#define pin_DL 22 //droping line
+#define pin_Z1 23 //Z1 watering circut
+#define pin_Z2 24 //Z2 watering circut
+#define pin_BS 25 //Blinds stop
+#define pin_BU 26 //Blinds up
+#define pin_BD 27 //Blinss down
+#define pin_TS 31 //Dallas temperature sensors
+#define pin_HU 28 //Heating upstairs
+#define pin_HD 29 //Heating downstairs
+#define pin_RS 30 //Rain sensor
 
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
 
@@ -157,8 +157,8 @@ const long timeoutTime = 2000;
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
 byte mac[] = {
-    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-IPAddress ip(172, 26, 160, 17);
+    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xE8};
+IPAddress ip(172, 26, 160, 16);
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use

@@ -7,7 +7,7 @@
   {
     "Sourcefile": null,
     "Include": "",
-    "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\standard"
+    "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\mega"
   },
   {
     "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
