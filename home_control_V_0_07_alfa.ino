@@ -48,15 +48,15 @@
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp>
 
-#define pin_DL 22 //droping line
-#define pin_Z1 23 //Z1 watering circut
-#define pin_Z2 24 //Z2 watering circut
-#define pin_BS 25 //Blinds stop
-#define pin_BU 26 //Blinds up
-#define pin_BD 27 //Blinss down
+#define pin_DL 23 //droping line
+#define pin_Z1 22 //Z1 watering circut
+#define pin_Z2 25 //Z2 watering circut
+#define pin_BS 24 //Blinds stop
+#define pin_BU 27 //Blinds up
+#define pin_BD 26 //Blinss down
 #define pin_TS 31 //Dallas temperature sensors
-#define pin_HU 28 //Heating upstairs
-#define pin_HD 29 //Heating downstairs
+#define pin_HU 29 //Heating upstairs
+#define pin_HD 28 //Heating downstairs
 #define pin_RS 30 //Rain sensor
 
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
