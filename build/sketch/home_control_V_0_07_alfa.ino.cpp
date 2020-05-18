@@ -507,11 +507,11 @@ void loop()
 
                         if (!roletyAuto)
                         {
-                            client.println(F("<p><a href=\"/2/on\"><button class=\"button\">Rolety recznie</button></a>"));
+                            client.println(F("<a href=\"/2/on\"><button class=\"button\">Rolety recznie</button></a>"));
                         }
                         else
                         {
-                            client.println(F("<p><a href=\"/2/off\"><button class=\"button button2\">Rolety auto</button></a>"));
+                            client.println(F("<a href=\"/2/off\"><button class=\"button button2\">Rolety auto</button></a>"));
                         };
 
 
