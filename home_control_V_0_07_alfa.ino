@@ -502,26 +502,26 @@ void loop()
 
                         if (!roletyAuto)
                         {
-                            client.println(F("<a href=\"/2/on\"><button class=\"button\">Rolety sterowane recznie</button></a></p>"));
+                            client.println(F("<p><a href=\"/2/on\"><button class=\"button\">Blinds Timer Off</button></a>"));
                         }
                         else
                         {
-                            client.println(F("<a href=\"/2/off\"><button class=\"button button2\">Rolety sterowane przez timer</button></a></p>"));
+                            client.println(F("<p><a href=\"/2/off\"><button class=\"button button2\">Blinds Timer On</button></a>"));
                         };
 
 
                         if (!roletyLight)
                         {
-                            client.println(F("<p><a href=\"/16/on\"><button class=\"button\">Czujnik swiatla wylaczony</button></a>"));
+                            client.println(F("<a href=\"/16/on\"><button class=\"button\">Light sensor off</button></a>"));
                         }
                         else
                         {
-                            client.println(F("<p><a href=\"/16/off\"><button class=\"button button2\">Rolety sterowane czujnikiem oswietlenia</button></a>"));
+                            client.println(F("<a href=\"/16/off\"><button class=\"button button2\">Light sensor on</button></a>"));
                         };
 
-                        client.println(F("<a href=\"/15/on\"><button class=\"button\">Ustaw poziom oswietlenia do zamkniecia rolet:"));
+                        client.println(F("<a href=\"/15/on\"><button class=\"button\">Set light level:"));
                         client.println((String)roletySetLightLevel);
-                        client.println(F("</button></a>"));
+                        client.println(F("</button></a></p>"));
 
 
                         if (!odliczanie.checkTimer(5)) //Blins up button
@@ -620,13 +620,6 @@ void loop()
 
                         //--------------Podlewanie:
                         client.println(F("<H3>Podlewanie</H3>"));
-                        client.println(F("<h5>Czas podlewania LK: "));
-                        client.println((String)podlewanieDL);
-                        client.println(F("</H5><h5>Czas podlewania Z1: "));
-                        client.println((String)podlewanieZ1);
-                        client.println(F("</H5><h5>Czas podlewania Z2: "));
-                        client.println((String)podlewanieZ2);
-                        client.println(F("</H5>"));
                         if (podlewanieAuto)
                         {
                             client.println(F("<p><a href=\"/10/off\"><button class=\"button button2\">Podlewanie Auto</button></a>"));
