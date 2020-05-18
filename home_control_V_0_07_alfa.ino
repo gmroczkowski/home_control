@@ -500,19 +500,6 @@ void loop()
                         //client.println("<p>GPIO 5 - State " + output5State + "</p>");
                         // If the output5State is off, it displays the ON button
 
-                        if (!roletyLight)
-                        {
-                            client.println(F("<p><a href=\"/16/on\"><button class=\"button\">Czujnik swiatla wylaczony</button></a>"));
-                        }
-                        else
-                        {
-                            client.println(F("<p><a href=\"/16/off\"><button class=\"button button2\">Czujnik swiatla wlaczony</button></a>"));
-                        };
-
-                        client.println(F("<a href=\"/15/on\"><button class=\"button\">Poziom swiatla:"));
-                        client.println((String)roletySetLightLevel);
-                        client.println(F("</button></a>"));
-
                         if (!roletyAuto)
                         {
                             client.println(F("<a href=\"/2/on\"><button class=\"button\">Rolety sterowane recznie</button></a></p>"));
@@ -521,6 +508,21 @@ void loop()
                         {
                             client.println(F("<a href=\"/2/off\"><button class=\"button button2\">Rolety sterowane przez timer</button></a></p>"));
                         };
+
+
+                        if (!roletyLight)
+                        {
+                            client.println(F("<p><a href=\"/16/on\"><button class=\"button\">Czujnik swiatla wylaczony</button></a>"));
+                        }
+                        else
+                        {
+                            client.println(F("<p><a href=\"/16/off\"><button class=\"button button2\">Rolety sterowane czujnikiem oswietlenia</button></a>"));
+                        };
+
+                        client.println(F("<a href=\"/15/on\"><button class=\"button\">Ustaw poziom oswietlenia do zamkniecia rolet:"));
+                        client.println((String)roletySetLightLevel);
+                        client.println(F("</button></a>"));
+
 
                         if (!odliczanie.checkTimer(5)) //Blins up button
                         {

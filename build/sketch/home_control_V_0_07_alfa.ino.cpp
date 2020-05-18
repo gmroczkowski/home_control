@@ -95,8 +95,9 @@ sunState slonce;
 // Auxiliar variables to store the current output state
 boolean roletyAuto = true;
 
-boolean roletyLight = true; //Turn on light steering
-int roletyLightLevel=600;   //Set light level
+boolean roletyLight = true; //Turn on blinds down by light
+int roletySetLightLevel = 600; //Set light level
+int roletyCurrentLightLevel = 600; //Set light level
 
 // Heating system variables:
 boolean ogrzewaniePietroDzien = true;
@@ -144,11 +145,11 @@ byte ogrzewaniePietroPopoludnieStopMinute = 0;
 // Watering system variables:
 boolean podlewanieAuto = true;
 byte podlewanieCykl = 0;
-int podlewanieDL = 1200;  //Dropping line 20min (1200s)
-int podlewanieZ1 = 600;   //Z1 10min (600s)
-int podlewanieZ2 = 600;   //Z2 10min (600s)
-byte wateringHour = 20;   //Hour of starting watering
-byte wateringMinute = 15; //Minute of stariting watering
+int podlewanieDL = 1200;      //Dropping line 20min (1200s)
+int podlewanieZ1 = 600;       //Z1 10min (600s)
+int podlewanieZ2 = 600;       //Z2 10min (600s)
+byte wateringHour = 20;       //Hour of starting watering
+byte wateringMinute = 15;     //Minute of stariting watering
 boolean podlewanieRainSensor; //Rain logical indicator
 
 // Current time
@@ -172,13 +173,13 @@ EthernetServer server(80);
 
 boolean trigger(byte);
 
-#line 173 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup();
-#line 248 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 249 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 816 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 829 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 173 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
 {
 
@@ -287,6 +288,23 @@ void loop()
                         client.println("Connection: close");
                         //client.println("Refresh: 5");  // refresh the page automatically every 5 sec
                         client.println();
+
+
+                        if (header.indexOf("GET /16/on") >= 0) //Force blinds by light on
+                        {
+                            roletyLight = 1; //Set automatic blinds down by light
+                        };
+
+                        if (header.indexOf("GET /16/off") >= 0) //Force blinds by light off
+                        {
+                            roletyLight = 0; //Set blins down without light trigger
+                        };
+
+                        if (header.indexOf("GET /15/on") >= 0) //Set light level to close blinds
+                        {
+                            roletySetLightLevel=roletyCurrentLightLevel;
+                        };
+
 
                         if (header.indexOf("GET /14/off") >= 0) //Force Z2 to stop waterring
                         {
@@ -483,9 +501,9 @@ void loop()
                         client.println((String)slonce.sunSetHour());
                         client.println(F(":"));
                         client.println((String)slonce.sunSetMinute());
-                        client.println(F(" </h5>")); //<h5> Sensor swiatla: "));
-                        //client.println((String)analogRead(pin_LightSensor));
-                        //client.println(F(" </h5>"));
+                        client.println(F(" </h5><h5> Sensor swiatla: "));
+                        client.println((String)roletyCurrentLightLevel);
+                        client.println(F(" </h5>"));
 
                         // Display current state, and ON/OFF buttons for GPIO 5
                         //client.println("<p>GPIO 5 - State " + output5State + "</p>");
@@ -493,36 +511,33 @@ void loop()
 
                         if (!roletyLight)
                         {
-                            client.println(F("<p><a href=\"/15/on\"><button class=\"button\">Rolety recznie"));
-                            client.println((String)roletyLightLevel);
-                            client.println(F("</button></a>"));
+                            client.println(F("<p><a href=\"/16/on\"><button class=\"button\">Czujnik swiatla wylaczony</button></a>"));
                         }
                         else
                         {
-                            client.println(F("<p><a href=\"/15/off\"><button class=\"button button2\">Rolety auto"));
-                            client.println((String)roletyLightLevel);
-                            client.println(F("</button></a>"));
+                            client.println(F("<p><a href=\"/16/off\"><button class=\"button button2\">Czujnik swiatla wlaczony</button></a>"));
                         };
 
+                        client.println(F("<a href=\"/15/on\"><button class=\"button\">Poziom swiatla:"));
+                        client.println((String)roletySetLightLevel);
+                        client.println(F("</button></a>"));
 
                         if (!roletyAuto)
                         {
-                            client.println(F("<a href=\"/2/on\"><button class=\"button\">Rolety recznie</button></a>"));
+                            client.println(F("<a href=\"/2/on\"><button class=\"button\">Rolety sterowane recznie</button></a></p>"));
                         }
                         else
                         {
-                            client.println(F("<a href=\"/2/off\"><button class=\"button button2\">Rolety auto</button></a>"));
+                            client.println(F("<a href=\"/2/off\"><button class=\"button button2\">Rolety sterowane przez timer</button></a></p>"));
                         };
-
-
 
                         if (!odliczanie.checkTimer(5)) //Blins up button
                         {
-                            client.println(F("<a href=\"/5/on\"><button class=\"button\">Podnies rolety</button></a>"));
+                            client.println(F("<p><a href=\"/5/on\"><button class=\"button\">Podnies rolety</button></a>"));
                         }
                         else
                         {
-                            client.println(F("<a href=\"/3/on\"><button class=\"button\">Rolety stop</button></a>"));
+                            client.println(F("<p><a href=\"/3/on\"><button class=\"button\">Rolety stop</button></a>"));
                         };
 
                         // Display current state, and ON/OFF buttons for GPIO 4
@@ -817,9 +832,7 @@ void loop()
     temperature2 = sensors.readTemperature(address2);
     temperature3 = sensors.readTemperature(address3);
 
-    roletyLightLevel=analogRead(pin_LightSensor); // Read light intensivity
-    
-
+    roletyCurrentLightLevel = analogRead(pin_LightSensor); // Read light intensivity
 }
 
 boolean trigger(int number)
