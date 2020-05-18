@@ -60,6 +60,7 @@
 #define pin_HU 29 //Heating upstairs
 #define pin_HD 28 //Heating downstairs
 #define pin_RS 30 //Rain sensor
+#define pin_LightSensor 0
 
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
 
@@ -93,6 +94,9 @@ sunState slonce;
 
 // Auxiliar variables to store the current output state
 boolean roletyAuto = true;
+
+boolean roletyLight = true; //Turn on light steering
+int roletyLightLevel=600;   //Set light level
 
 // Heating system variables:
 boolean ogrzewaniePietroDzien = true;
@@ -145,6 +149,7 @@ int podlewanieZ1 = 600;   //Z1 10min (600s)
 int podlewanieZ2 = 600;   //Z2 10min (600s)
 byte wateringHour = 20;   //Hour of starting watering
 byte wateringMinute = 15; //Minute of stariting watering
+boolean podlewanieRainSensor; //Rain logical indicator
 
 // Current time
 unsigned long currentTime = millis();
@@ -167,13 +172,13 @@ EthernetServer server(80);
 
 boolean trigger(byte);
 
-#line 168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 173 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup();
-#line 243 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 248 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 789 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 816 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 173 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
 {
 
@@ -461,7 +466,7 @@ void loop()
                         client.println(F("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}"));
                         client.println(F(".button2 {background-color: #77878A;}</style></head>"));
                         // Web Page Heading
-                        client.println(F("<body><H1>Home Control Domek Ozarow</H1>"));
+                        client.println(F("<body><H1>Home Control Domek Ozarow V0.07A</H1>"));
                         client.println(F("<H3>Rolety</H3>"));
                         client.println(F("<h5> Dzis jest: "));
                         client.println(zegar.getDate());
@@ -478,11 +483,27 @@ void loop()
                         client.println((String)slonce.sunSetHour());
                         client.println(F(":"));
                         client.println((String)slonce.sunSetMinute());
-                        client.println(F(" </h5>"));
+                        client.println(F(" </h5>")); //<h5> Sensor swiatla: "));
+                        //client.println((String)analogRead(pin_LightSensor));
+                        //client.println(F(" </h5>"));
 
                         // Display current state, and ON/OFF buttons for GPIO 5
                         //client.println("<p>GPIO 5 - State " + output5State + "</p>");
                         // If the output5State is off, it displays the ON button
+
+                        if (!roletyLight)
+                        {
+                            client.println(F("<p><a href=\"/15/on\"><button class=\"button\">Rolety recznie"));
+                            client.println((String)roletyLightLevel);
+                            client.println(F("</button></a>"));
+                        }
+                        else
+                        {
+                            client.println(F("<p><a href=\"/15/off\"><button class=\"button button2\">Rolety auto"));
+                            client.println((String)roletyLightLevel);
+                            client.println(F("</button></a>"));
+                        };
+
 
                         if (!roletyAuto)
                         {
@@ -492,6 +513,8 @@ void loop()
                         {
                             client.println(F("<p><a href=\"/2/off\"><button class=\"button button2\">Rolety auto</button></a>"));
                         };
+
+
 
                         if (!odliczanie.checkTimer(5)) //Blins up button
                         {
@@ -793,6 +816,10 @@ void loop()
     temperature1 = sensors.readTemperature(address1);
     temperature2 = sensors.readTemperature(address2);
     temperature3 = sensors.readTemperature(address3);
+
+    roletyLightLevel=analogRead(pin_LightSensor); // Read light intensivity
+    
+
 }
 
 boolean trigger(int number)
