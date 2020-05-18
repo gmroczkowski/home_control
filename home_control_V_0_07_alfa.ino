@@ -486,13 +486,13 @@ void loop()
                         {
                             client.println(F("<p><a href=\"/15/on\"><button class=\"button\">Rolety recznie"));
                             client.println((String)roletyLightLevel);
-                            client.println(F("</button></a>"));
+                            client.println(F("</button>"));
                         }
                         else
                         {
                             client.println(F("<p><a href=\"/15/off\"><button class=\"button button2\">Rolety auto"));
                             client.println((String)roletyLightLevel);
-                            client.println(F("</button></a>"));
+                            client.println(F("</button>"));
                         };
 
 
