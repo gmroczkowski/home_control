@@ -631,11 +631,11 @@ void loop()
                         client.println(F("<H3>Podlewanie</H3>"));
                         if (podlewanieRainSensor)
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" checked> Deszcz"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false"" checked> Deszcz"));
                         }
                         else
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" unchecked> Deszcz"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false"" unchecked> Deszcz"));
                         }
                         
                         if (podlewanieAuto)
@@ -850,6 +850,7 @@ boolean trigger(int number)
         {
             Serial.println("Trigger: jest wschód!");
             lockTrigger[number] = true; //Locking trigger to start one time.
+            odliczanie.startTimer(18000000,15); //Locking blinds light trigger to start one time.
             return true;                //Return 1.
         }
         else
@@ -871,20 +872,20 @@ boolean trigger(int number)
         {
             if (zegar.getSecond() != 0)
                 lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
-            return false;
+            
         }
         
         if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!odliczanie.checkTimer(15))&&(roletyLight)) //If it is dark
         {
-            //Serial.println("Trigger: jest ciemno!");
-            odliczanie.startTimer(6000,15); //Locking trigger to start one time.
+            Serial.println("Trigger: jest ciemno!");
+            odliczanie.startTimer(3600000,15); //Locking trigger to start one time.
             return true; 
         }
         else
         {
             return false;
         }
-        
+        return false;
         break;
     case 3:
         if ((zegar.getHour() == wateringHour) && (zegar.getMinute() == wateringMinute) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)

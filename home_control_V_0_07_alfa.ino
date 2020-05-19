@@ -57,8 +57,9 @@
 #define pin_TS 31 //Dallas temperature sensors
 #define pin_HU 29 //Heating upstairs
 #define pin_HD 28 //Heating downstairs
-#define pin_RS 30 //Rain sensor
-#define pin_LightSensor 0
+#define pin_RS 30 //Rain sensor input
+#define pin_LightSensor 0 //Light sensor for blinds analog input
+#define pin_gardenLights 32 //Garden lights output
 
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
 
@@ -96,6 +97,8 @@ boolean roletyAuto = true;
 boolean roletyLight = true; //Turn on blinds down by light
 int roletySetLightLevel = 600; //Set light level
 int roletyCurrentLightLevel = 600; //Set light level
+
+bolean gardenLights = false; //Garden lights variable
 
 // Heating system variables:
 boolean ogrzewaniePietroDzien = true;
@@ -184,6 +187,9 @@ void setup()
     pinMode(pin_BS, OUTPUT);
     pinMode(pin_HU, OUTPUT);
     pinMode(pin_HD, OUTPUT);
+    pinMode(pin_RS, INPUT);
+    pinMode(pin_LightSensor, INPUT);
+    pinMode(pin_gardenLights, OUTPUT);
     // Set outputs to HIGH
     digitalWrite(pin_DL, HIGH);
     digitalWrite(pin_Z1, HIGH);
@@ -193,6 +199,7 @@ void setup()
     digitalWrite(pin_BS, HIGH);
     digitalWrite(pin_HU, HIGH);
     digitalWrite(pin_HD, HIGH);
+    digitalWrite(pin_gardenLights, HIGH);
 
     for (int i = 0; i < 5; i++)
         lockTrigger[i] = false;
@@ -622,11 +629,11 @@ void loop()
                         client.println(F("<H3>Podlewanie</H3>"));
                         if (podlewanieRainSensor)
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" checked> Deszcz"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false"" checked> Deszcz"));
                         }
                         else
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" unchecked> Deszcz"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false"" unchecked> Deszcz"));
                         }
                         
                         if (podlewanieAuto)
@@ -839,8 +846,9 @@ boolean trigger(int number)
     case 1:
         if ((zegar.getHour() == slonce.sunRiseHour()) && (zegar.getMinute() == slonce.sunRiseMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
         {
-            Serial.println("Trigger: jest wschód!");
+            //Serial.println("Trigger: jest wschód!");
             lockTrigger[number] = true; //Locking trigger to start one time.
+            odliczanie.startTimer(18000000,15); //Locking blinds light trigger to start one time.
             return true;                //Return 1.
         }
         else
@@ -852,7 +860,7 @@ boolean trigger(int number)
         break;
     case 2:
         //Serial.println("Before if hour:" + (String)zegar.getHour() + " Sun set hour:" + (String)slonce.sunSetHour() + " minute:" + (String)zegar.getMinute() + " Sun set minute" + (String)slonce.sunSetMinute() + " second: " + (String)zegar.getSecond() + " lock: " + (String)(!lockTrigger[number]));
-        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun set :)
         {
             //Serial.println("Trigger: jest zachód!");
             lockTrigger[number] = true; //Locking trigger to start one time.
@@ -862,20 +870,20 @@ boolean trigger(int number)
         {
             if (zegar.getSecond() != 0)
                 lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
-            return false;
+            
         }
         
         if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!odliczanie.checkTimer(15))&&(roletyLight)) //If it is dark
         {
             //Serial.println("Trigger: jest ciemno!");
-            odliczanie.startTimer(6000,15); //Locking trigger to start one time.
+            odliczanie.startTimer(3600000,15); //Locking trigger to start one time.
             return true; 
         }
         else
         {
             return false;
         }
-        
+        return false;
         break;
     case 3:
         if ((zegar.getHour() == wateringHour) && (zegar.getMinute() == wateringMinute) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
@@ -891,5 +899,15 @@ boolean trigger(int number)
             return false;
         }
         break;
+    case 4:
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()+5) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have 5 minutes after Sun set :)
+        {
+
+        }
+    case 5:
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()+5) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have 10 minutes past 2AM :)
+        {
+
+        }
     }
 }

@@ -1060,7 +1060,7 @@ void loop()
 # 625 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
 # 625 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
-                                          "<p><input type=""checkbox"" onclick=""return false;"" checked> Deszcz"
+                                          "<p><input type=""checkbox"" onclick=""return false"" checked> Deszcz"
 # 625 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
 # 625 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
@@ -1072,7 +1072,7 @@ void loop()
 # 629 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
 # 629 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
-                                          "<p><input type=""checkbox"" onclick=""return false;"" unchecked> Deszcz"
+                                          "<p><input type=""checkbox"" onclick=""return false"" unchecked> Deszcz"
 # 629 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
 # 629 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
@@ -1411,6 +1411,7 @@ boolean trigger(int number)
         {
             Serial.println("Trigger: jest wschód!");
             lockTrigger[number] = true; //Locking trigger to start one time.
+            odliczanie.startTimer(18000000,15); //Locking blinds light trigger to start one time.
             return true; //Return 1.
         }
         else
@@ -1432,20 +1433,20 @@ boolean trigger(int number)
         {
             if (zegar.getSecond() != 0)
                 lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
-            return false;
+
         }
 
         if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!odliczanie.checkTimer(15))&&(roletyLight)) //If it is dark
         {
-            //Serial.println("Trigger: jest ciemno!");
-            odliczanie.startTimer(6000,15); //Locking trigger to start one time.
+            Serial.println("Trigger: jest ciemno!");
+            odliczanie.startTimer(3600000,15); //Locking trigger to start one time.
             return true;
         }
         else
         {
             return false;
         }
-
+        return false;
         break;
     case 3:
         if ((zegar.getHour() == wateringHour) && (zegar.getMinute() == wateringMinute) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
