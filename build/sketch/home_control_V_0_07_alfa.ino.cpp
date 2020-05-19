@@ -177,7 +177,7 @@ boolean trigger(byte);
 void setup();
 #line 249 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 824 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 834 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
 #line 174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
@@ -629,13 +629,22 @@ void loop()
 
                         //--------------Podlewanie:
                         client.println(F("<H3>Podlewanie</H3>"));
-                        if (podlewanieAuto)
+                        if (podlewanieRainSensor)
                         {
-                            client.println(F("<p><a href=\"/10/off\"><button class=\"button button2\">Podlewanie Auto</button></a>"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" checked> Deszcz"));
                         }
                         else
                         {
-                            client.println(F("<p><a href=\"/10/on\"><button class=\"button \">Podlewanie Reczne</button></a>"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" unchecked> Deszcz"));
+                        }
+                        
+                        if (podlewanieAuto)
+                        {
+                            client.println(F("<a href=\"/10/off\"><button class=\"button button2\">Podlewanie Auto</button></a>"));
+                        }
+                        else
+                        {
+                            client.println(F("<a href=\"/10/on\"><button class=\"button \">Podlewanie Reczne</button></a>"));
                         }
 
                         if (podlewanieCykl == 0)
@@ -828,6 +837,7 @@ void loop()
     temperature3 = sensors.readTemperature(address3);
 
     roletyCurrentLightLevel = analogRead(pin_LightSensor); // Read light intensivity
+    podlewanieRainSensor=analogRead(pin_RS); // Check rain sensor
 }
 
 boolean trigger(int number)
@@ -838,7 +848,7 @@ boolean trigger(int number)
     case 1:
         if ((zegar.getHour() == slonce.sunRiseHour()) && (zegar.getMinute() == slonce.sunRiseMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
         {
-            //Serial.println("Trigger: jest wschód!");
+            Serial.println("Trigger: jest wschód!");
             lockTrigger[number] = true; //Locking trigger to start one time.
             return true;                //Return 1.
         }
@@ -863,6 +873,17 @@ boolean trigger(int number)
                 lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
             return false;
         }
+        if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!lockTrigger)) //If it is dark
+        {
+            //Serial.println("Trigger: jest ciemno!");
+            lockTrigger[number] = true; //Locking trigger to start one time.
+            return true; 
+        }
+        else
+        {
+            /* code */
+        }
+        
         break;
     case 3:
         if ((zegar.getHour() == wateringHour) && (zegar.getMinute() == wateringMinute) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
