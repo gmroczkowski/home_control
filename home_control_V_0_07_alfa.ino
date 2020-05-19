@@ -148,7 +148,7 @@ int podlewanieZ1 = 600;       //Z1 10min (600s)
 int podlewanieZ2 = 600;       //Z2 10min (600s)
 byte wateringHour = 20;       //Hour of starting watering
 byte wateringMinute = 15;     //Minute of stariting watering
-boolean podlewanieRainSensor; //Rain logical indicator
+boolean podlewanieRainSensor=false; //Rain logical indicator
 
 // Current time
 unsigned long currentTime = millis();
@@ -626,7 +626,7 @@ void loop()
                         }
                         else
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" unchecked> Deszcz"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" unchecked> brak deszczu"));
                         }
                         
                         if (podlewanieAuto)
@@ -828,7 +828,7 @@ void loop()
     temperature3 = sensors.readTemperature(address3);
 
     roletyCurrentLightLevel = analogRead(pin_LightSensor); // Read light intensivity
-    podlewanieRainSensor=analogRead(pin_RS); // Check rain sensor
+    podlewanieRainSensor=digitalRead(pin_RS); // Check rain sensor
 }
 
 boolean trigger(int number)

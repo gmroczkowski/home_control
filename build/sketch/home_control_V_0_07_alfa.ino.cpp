@@ -812,14 +812,14 @@ void loop()
     if ((trigger(1)) && (roletyAuto)) //Auto blins up if it is on
     {
         //Serial.println("Rolety w gore by trigger");
-        odliczanie.startTimer(1500, 5); //Only 100ms
+        odliczanie.startTimer(1500, 5); //Only 1500ms
     };
     if ((trigger(2)) && (roletyAuto)) //Auto blins up if it is on
     {
-        odliczanie.startTimer(1500, 4); //Only 100ms
+        odliczanie.startTimer(1500, 4); //Only 1500ms
     };
 
-    if (trigger(3) && (podlewanieAuto)) //Auto watering is inside the trigger
+    if (trigger(3) && (podlewanieAuto) && (!podlewanieRainSensor)) //Auto watering is inside the trigger, and we have no rain :)
     {
         //Serial.println("Starutjemy cykl podlewania");
         podlewanieCykl = 1;
