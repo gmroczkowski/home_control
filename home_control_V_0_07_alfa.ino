@@ -626,7 +626,7 @@ void loop()
                         }
                         else
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" unchecked> brak deszczu"));
+                            client.println(F("<p><input type=""checkbox"" onclick=""return false;"" unchecked> Deszcz"));
                         }
                         
                         if (podlewanieAuto)
@@ -864,15 +864,16 @@ boolean trigger(int number)
                 lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
             return false;
         }
-        if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!lockTrigger)) //If it is dark
+        
+        if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!odliczanie.checkTimer(15))&&(roletyLight)) //If it is dark
         {
             //Serial.println("Trigger: jest ciemno!");
-            lockTrigger[number] = true; //Locking trigger to start one time.
+            odliczanie.startTimer(6000,15); //Locking trigger to start one time.
             return true; 
         }
         else
         {
-            /* code */
+            return false;
         }
         
         break;
