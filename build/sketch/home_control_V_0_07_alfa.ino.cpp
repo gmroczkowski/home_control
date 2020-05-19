@@ -59,8 +59,9 @@
 #define pin_TS 31 //Dallas temperature sensors
 #define pin_HU 29 //Heating upstairs
 #define pin_HD 28 //Heating downstairs
-#define pin_RS 30 //Rain sensor
-#define pin_LightSensor 0
+#define pin_RS 30 //Rain sensor input
+#define pin_LightSensor 0 //Light sensor for blinds analog input
+#define pin_gardenLights 32 //Garden lights output
 
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
 
@@ -98,6 +99,10 @@ boolean roletyAuto = true;
 boolean roletyLight = true; //Turn on blinds down by light
 int roletySetLightLevel = 600; //Set light level
 int roletyCurrentLightLevel = 600; //Set light level
+
+boolean gardenLights = false; //Garden lights variable
+byte gardenLightsOffHour=2;  //Hour to off gardenLights
+byte gardenLightsOffMinute=10;  //Minutes to off gardenLights
 
 // Heating system variables:
 boolean ogrzewaniePietroDzien = true;
@@ -173,13 +178,13 @@ EthernetServer server(80);
 
 boolean trigger(byte);
 
-#line 174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 179 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup();
-#line 249 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 258 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 834 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 861 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 179 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
 {
 
@@ -193,6 +198,9 @@ void setup()
     pinMode(pin_BS, OUTPUT);
     pinMode(pin_HU, OUTPUT);
     pinMode(pin_HD, OUTPUT);
+    pinMode(pin_RS, INPUT);
+    pinMode(pin_LightSensor, INPUT);
+    pinMode(pin_gardenLights, OUTPUT);
     // Set outputs to HIGH
     digitalWrite(pin_DL, HIGH);
     digitalWrite(pin_Z1, HIGH);
@@ -202,6 +210,7 @@ void setup()
     digitalWrite(pin_BS, HIGH);
     digitalWrite(pin_HU, HIGH);
     digitalWrite(pin_HD, HIGH);
+    digitalWrite(pin_gardenLights, HIGH);
 
     for (int i = 0; i < 5; i++)
         lockTrigger[i] = false;
@@ -504,6 +513,10 @@ void loop()
                         client.println(F(" </h5><h5> Sensor swiatla: "));
                         client.println((String)roletyCurrentLightLevel);
                         client.println(F(" </h5>"));
+                        client.println(F(" </h5><h5> Lampy w ogrodzie: "));
+                        client.println((String)gardenLights);
+                        client.println(F(" </h5>"));
+
 
                         // Display current state, and ON/OFF buttons for GPIO 5
                         //client.println("<p>GPIO 5 - State " + output5State + "</p>");
@@ -789,6 +802,16 @@ void loop()
         digitalWrite(pin_BS, HIGH);
     };
 
+    if (gardenLights) //Check, if garden lights should be on
+    {
+        digitalWrite(pin_gardenLights,LOW);
+    }
+    else
+    {
+        digitalWrite(pin_gardenLights,HIGH);
+    }
+    
+
     if (podlewanieCykl == 1) //Starting watering cycle
     {
         odliczanie.startTimer((unsigned long int)podlewanieDL * 1000, 12);
@@ -825,6 +848,10 @@ void loop()
         podlewanieCykl = 1;
     };
 
+    trigger(4); //Check, if we have to turn on garden lights.
+
+    trigger(5); //Check, if we have to turn off garden lights.
+
     //----------------------------------------//
     //              MAIN BLOCK                //
     //----------------------------------------//
@@ -848,7 +875,7 @@ boolean trigger(int number)
     case 1:
         if ((zegar.getHour() == slonce.sunRiseHour()) && (zegar.getMinute() == slonce.sunRiseMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
         {
-            Serial.println("Trigger: jest wschód!");
+            //Serial.println("Trigger: jest wschód!");
             lockTrigger[number] = true; //Locking trigger to start one time.
             odliczanie.startTimer(18000000,15); //Locking blinds light trigger to start one time.
             return true;                //Return 1.
@@ -862,7 +889,7 @@ boolean trigger(int number)
         break;
     case 2:
         //Serial.println("Before if hour:" + (String)zegar.getHour() + " Sun set hour:" + (String)slonce.sunSetHour() + " minute:" + (String)zegar.getMinute() + " Sun set minute" + (String)slonce.sunSetMinute() + " second: " + (String)zegar.getSecond() + " lock: " + (String)(!lockTrigger[number]));
-        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun set :)
         {
             //Serial.println("Trigger: jest zachód!");
             lockTrigger[number] = true; //Locking trigger to start one time.
@@ -877,7 +904,7 @@ boolean trigger(int number)
         
         if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!odliczanie.checkTimer(15))&&(roletyLight)) //If it is dark
         {
-            Serial.println("Trigger: jest ciemno!");
+            //Serial.println("Trigger: jest ciemno!");
             odliczanie.startTimer(3600000,15); //Locking trigger to start one time.
             return true; 
         }
@@ -900,6 +927,22 @@ boolean trigger(int number)
                 lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
             return false;
         }
+        break;
+    case 4:
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()+5) && (zegar.getSecond() == 0) && (!gardenLights)) //If we have 5 minutes after Sun set and gardenLights are off:)
+        {
+            gardenLights=true;
+            return true;
+        }
+        return false;
+        break;
+    case 5:
+        if ((zegar.getHour() == gardenLightsOffHour) && (zegar.getMinute() == gardenLightsOffMinute) && (zegar.getSecond() == 0) && (gardenLights)) //If we have 10 minutes past 2AM :)
+        {
+            gardenLights=false;
+            return true;
+        }
+        return false;
         break;
     }
 }

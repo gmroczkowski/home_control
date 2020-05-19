@@ -98,7 +98,9 @@ boolean roletyLight = true; //Turn on blinds down by light
 int roletySetLightLevel = 600; //Set light level
 int roletyCurrentLightLevel = 600; //Set light level
 
-bolean gardenLights = false; //Garden lights variable
+boolean gardenLights = false; //Garden lights variable
+byte gardenLightsOffHour=2;  //Hour to off gardenLights
+byte gardenLightsOffMinute=10;  //Minutes to off gardenLights
 
 // Heating system variables:
 boolean ogrzewaniePietroDzien = true;
@@ -502,6 +504,10 @@ void loop()
                         client.println(F(" </h5><h5> Sensor swiatla: "));
                         client.println((String)roletyCurrentLightLevel);
                         client.println(F(" </h5>"));
+                        client.println(F(" </h5><h5> Lampy w ogrodzie: "));
+                        client.println((String)gardenLights);
+                        client.println(F(" </h5>"));
+
 
                         // Display current state, and ON/OFF buttons for GPIO 5
                         //client.println("<p>GPIO 5 - State " + output5State + "</p>");
@@ -787,6 +793,16 @@ void loop()
         digitalWrite(pin_BS, HIGH);
     };
 
+    if (gardenLights) //Check, if garden lights should be on
+    {
+        digitalWrite(pin_gardenLights,LOW);
+    }
+    else
+    {
+        digitalWrite(pin_gardenLights,HIGH);
+    }
+    
+
     if (podlewanieCykl == 1) //Starting watering cycle
     {
         odliczanie.startTimer((unsigned long int)podlewanieDL * 1000, 12);
@@ -822,6 +838,10 @@ void loop()
         //Serial.println("Starutjemy cykl podlewania");
         podlewanieCykl = 1;
     };
+
+    trigger(4); //Check, if we have to turn on garden lights.
+
+    trigger(5); //Check, if we have to turn off garden lights.
 
     //----------------------------------------//
     //              MAIN BLOCK                //
@@ -900,14 +920,20 @@ boolean trigger(int number)
         }
         break;
     case 4:
-        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()+5) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have 5 minutes after Sun set :)
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()+5) && (zegar.getSecond() == 0) && (!gardenLights)) //If we have 5 minutes after Sun set and gardenLights are off:)
         {
-
+            gardenLights=true;
+            return true;
         }
+        return false;
+        break;
     case 5:
-        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()+5) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have 10 minutes past 2AM :)
+        if ((zegar.getHour() == gardenLightsOffHour) && (zegar.getMinute() == gardenLightsOffMinute) && (zegar.getSecond() == 0) && (gardenLights)) //If we have 10 minutes past 2AM :)
         {
-
+            gardenLights=false;
+            return true;
         }
+        return false;
+        break;
     }
 }
