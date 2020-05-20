@@ -291,6 +291,211 @@ void loop()
                         //client.println("Refresh: 5");  // refresh the page automatically every 5 sec
                         client.println();
 
+
+                        if (header.indexOf("GET /55/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(13); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /54/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(13); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /53/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(13); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /52/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(12); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /51/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(12); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /50/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(12); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /49/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(11); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /48/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(11); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /47/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(11); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /46/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(10); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /45/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(10); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /44/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(10); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /43/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(9); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /42/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(9); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /41/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(9); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /40/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(8); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /39/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(8); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /38/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(8); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /37/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(7); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /36/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(7); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /35/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(7); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /34/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(6); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /33/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(6); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /32/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(6); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /31/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(5); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /30/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(5); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /29/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(5); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /28/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(4); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /27/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(4); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /26/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(4); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /25/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(3); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /24/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(3); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /23/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(3); //Rolety wiatrolap down
+                        };
+
+                        if (header.indexOf("GET /22/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(2); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /21/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(2); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /20/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(2); //Rolety wiatrolap down
+                        };
+
                         if (header.indexOf("GET /19/on") >= 0) //Rolety sypialnia stop
                         {
                             rolety.blindsStop(1); //Rolety sypialnia stop
@@ -719,9 +924,60 @@ void loop()
                         };
 
                         client.println(F("<H3>Rolety</H3>"));
+
                         client.println(F("<p><a href=\"/17/on\"><button class=\"button button\">Rolety w sypialni w gore</button></a>"));
                         client.println(F("<a href=\"/18/on\"><button class=\"button button\">W dol</button></a>"));
                         client.println(F("<a href=\"/19/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/20/on\"><button class=\"button button\">Rolety 2 w gore</button></a>"));
+                        client.println(F("<a href=\"/21/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/22/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/23/on\"><button class=\"button button\">Rolety 3 w gore</button></a>"));
+                        client.println(F("<a href=\"/24/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/25/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/26/on\"><button class=\"button button\">Rolety 4 w gore</button></a>"));
+                        client.println(F("<a href=\"/27/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/28/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/29/on\"><button class=\"button button\">Rolety 5 w gore</button></a>"));
+                        client.println(F("<a href=\"/30/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/31/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/32/on\"><button class=\"button button\">Rolety 6 w gore</button></a>"));
+                        client.println(F("<a href=\"/33/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/34/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/35/on\"><button class=\"button button\">Rolety 7 w gore</button></a>"));
+                        client.println(F("<a href=\"/36/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/37/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/38/on\"><button class=\"button button\">Rolety 8 w gore</button></a>"));
+                        client.println(F("<a href=\"/39/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/40/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/41/on\"><button class=\"button button\">Rolety 9 w gore</button></a>"));
+                        client.println(F("<a href=\"/42/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/43/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/44/on\"><button class=\"button button\">Rolety 10 w gore</button></a>"));
+                        client.println(F("<a href=\"/45/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/46/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/47/on\"><button class=\"button button\">Rolety 11 w gore</button></a>"));
+                        client.println(F("<a href=\"/48/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/49/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/50/on\"><button class=\"button button\">Rolety 12 w gore</button></a>"));
+                        client.println(F("<a href=\"/51/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/52/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+                        client.println(F("<p><a href=\"/53/on\"><button class=\"button button\">Rolety 13 w gore</button></a>"));
+                        client.println(F("<a href=\"/54/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/55/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
+
 
                         client.println(F("<a href=\"/nothing\"><button class=\"button button2\">Refresh </button></a></p>"));
                         //-------------Koniec
