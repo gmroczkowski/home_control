@@ -27,4 +27,5 @@ c:\Users\gmroczkowski\Documents\Arduino\home_control\build\sketch\home_control_V
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp \
- C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\Blinds\Blinds.cpp

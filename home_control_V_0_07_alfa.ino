@@ -88,8 +88,10 @@ OneWire onewire(pin_TS);   //Dallas temperature sensors
 DS18B20 sensors(&onewire); //Dallas temperature sensors
 
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp>
+#include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Blinds\Blinds.cpp>
 
 sunState slonce;
+Blinds rolety;
 
 // Auxiliar variables to store the current output state
 boolean roletyAuto = true;
@@ -289,6 +291,23 @@ void loop()
                         //client.println("Refresh: 5");  // refresh the page automatically every 5 sec
                         client.println();
 
+                        if (header.indexOf("GET /19/on") >= 0) //Rolety sypialnia stop
+                        {
+                            rolety.blindsStop(1); //Rolety sypialnia stop
+                        };
+
+
+                        if (header.indexOf("GET /18/on") >= 0) //Rolety wiatrolap up
+                        {
+                            rolety.blindsDown(1); //Rolety wiatrolap up
+                        };
+
+
+                        if (header.indexOf("GET /17/on") >= 0) //Rolety wiatrolap down
+                        {
+                            rolety.blindsUp(1); //Rolety wiatrolap down
+                        };
+
 
                         if (header.indexOf("GET /16/on") >= 0) //Force blinds by light on
                         {
@@ -400,8 +419,10 @@ void loop()
 
                         if (header.indexOf("GET /5/on") >= 0) //Blins up
                         {
-                            //Serial.println("Rolety w gore");
+                            Serial.println("Rolety w gore");
+                            rolety.blindsUp(0);
                             odliczanie.startTimer(1500, 5); //Only 700ms
+
                         };
                         /*if (header.indexOf("GET /5/off") >= 0)
                         // {
@@ -411,6 +432,8 @@ void loop()
                         };*/
                         if (header.indexOf("GET /4/on") >= 0) //Blinds down
                         {
+                            Serial.println("Rolety w dol");
+                            rolety.blindsDown(0);
                             odliczanie.startTimer(1500, 4); //Only 700ms
                         };
                         //if (header.indexOf("GET /4/off") >= 0)
@@ -420,6 +443,8 @@ void loop()
                         //};
                         if (header.indexOf("GET /3/on") >= 0) //Blinds stop
                         {
+                            Serial.println("Rolety w stop");
+                            rolety.blindsStop(0);
                             odliczanie.startTimer(1500, 3); //Only 700ms
                         };
                         /*if (header.indexOf("GET /3/off") >= 0)
@@ -692,6 +717,12 @@ void loop()
                             client.println(odliczanie.getTime(14));
                             client.println(F("</button></a></p>"));
                         };
+
+                        client.println(F("<H3>Rolety</H3>"));
+                        client.println(F("<p><a href=\"/17/on\"><button class=\"button button\">Rolety w sypialni w gore</button></a>"));
+                        client.println(F("<a href=\"/18/on\"><button class=\"button button\">W dol</button></a>"));
+                        client.println(F("<a href=\"/19/on\"><button class=\"button button\">STOP!</button></a></p>"));
+
                         client.println(F("<a href=\"/nothing\"><button class=\"button button2\">Refresh </button></a></p>"));
                         //-------------Koniec
                         client.println();
@@ -825,11 +856,12 @@ void loop()
 
     if ((trigger(1)) && (roletyAuto)) //Auto blins up if it is on
     {
-        //Serial.println("Rolety w gore by trigger");
+        Serial.println("Rolety w gore by trigger");
         odliczanie.startTimer(1500, 5); //Only 1500ms
     };
     if ((trigger(2)) && (roletyAuto)) //Auto blins up if it is on
     {
+        Serial.println("Rolety w dol by trigger");
         odliczanie.startTimer(1500, 4); //Only 1500ms
     };
 
@@ -906,7 +938,7 @@ boolean trigger(int number)
         return false;
         break;
     case 3:
-        if ((zegar.getHour() == wateringHour) && (zegar.getMinute() == wateringMinute) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
+        if ((zegar.getHour() == wateringHour) && (zegar.getMinute() == wateringMinute) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have watering time :)
         {
             //Serial.println("Trigger: start cyklu podlewania");
             lockTrigger[number] = true;
