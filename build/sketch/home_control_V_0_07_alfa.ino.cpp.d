@@ -19,9 +19,12 @@ c:\Users\gmroczkowski\Documents\Arduino\home_control\build\sketch\home_control_V
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Udp.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Stream.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/IPAddress.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\Ethernet\src/EthernetUdp.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\Ethernet\src/Ethernet.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\TimeLord-master/TimeLord.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\OneWire/OneWire.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\DS18B20/DS18B20.h \
+ C:\Users\gmroczkowski\Documents\Arduino\libraries\Time-master/TimeLib.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.cpp \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h \

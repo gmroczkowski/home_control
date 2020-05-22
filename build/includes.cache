@@ -36,6 +36,11 @@
   },
   {
     "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Include": "TimeLib.h",
+    "Includepath": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\Time-master"
+  },
+  {
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "",
     "Includepath": null
   },
@@ -96,6 +101,16 @@
   },
   {
     "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\DS18B20\\DS18B20.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\Time-master\\DateStrings.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\Time-master\\Time.cpp",
     "Include": "",
     "Includepath": null
   }

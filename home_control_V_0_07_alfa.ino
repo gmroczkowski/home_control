@@ -40,25 +40,27 @@
 
 #include <SPI.h>
 #include <Ethernet.h>
+#include <EthernetUdp.h>
 #include <TimeLord.h>
 #include <OneWire.h>
 #include <DS18B20.h>
+#include <TimeLib.h>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.cpp>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp>
 
-#define pin_DL 23 //droping line
-#define pin_Z1 22 //Z1 watering circut
-#define pin_Z2 25 //Z2 watering circut
-#define pin_BS 24 //Blinds stop
-#define pin_BU 27 //Blinds up
-#define pin_BD 26 //Blinss down
-#define pin_TS 31 //Dallas temperature sensors
-#define pin_HU 29 //Heating upstairs
-#define pin_HD 28 //Heating downstairs
-#define pin_RS 30 //Rain sensor input
-#define pin_LightSensor 0 //Light sensor for blinds analog input
+#define pin_DL 23           //droping line
+#define pin_Z1 22           //Z1 watering circut
+#define pin_Z2 25           //Z2 watering circut
+#define pin_BS 24           //Blinds stop
+#define pin_BU 27           //Blinds up
+#define pin_BD 26           //Blinss down
+#define pin_TS 31           //Dallas temperature sensors
+#define pin_HU 29           //Heating upstairs
+#define pin_HD 28           //Heating downstairs
+#define pin_RS 30           //Rain sensor input
+#define pin_LightSensor 0   //Light sensor for blinds analog input
 #define pin_gardenLights 32 //Garden lights output
 
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
@@ -96,13 +98,13 @@ Blinds rolety;
 // Auxiliar variables to store the current output state
 boolean roletyAuto = true;
 
-boolean roletyLight = true; //Turn on blinds down by light
-int roletySetLightLevel = 600; //Set light level
+boolean roletyLight = true;        //Turn on blinds down by light
+int roletySetLightLevel = 600;     //Set light level
 int roletyCurrentLightLevel = 600; //Set light level
 
-boolean gardenLights = false; //Garden lights variable
-byte gardenLightsOffHour=2;  //Hour to off gardenLights
-byte gardenLightsOffMinute=10;  //Minutes to off gardenLights
+boolean gardenLights = false;    //Garden lights variable
+byte gardenLightsOffHour = 2;    //Hour to off gardenLights
+byte gardenLightsOffMinute = 10; //Minutes to off gardenLights
 
 // Heating system variables:
 boolean ogrzewaniePietroDzien = true;
@@ -150,12 +152,12 @@ byte ogrzewaniePietroPopoludnieStopMinute = 0;
 // Watering system variables:
 boolean podlewanieAuto = true;
 byte podlewanieCykl = 0;
-int podlewanieDL = 1200;      //Dropping line 20min (1200s)
-int podlewanieZ1 = 600;       //Z1 10min (600s)
-int podlewanieZ2 = 600;       //Z2 10min (600s)
-byte wateringHour = 20;       //Hour of starting watering
-byte wateringMinute = 15;     //Minute of stariting watering
-boolean podlewanieRainSensor=false; //Rain logical indicator
+int podlewanieDL = 1200;              //Dropping line 20min (1200s)
+int podlewanieZ1 = 600;               //Z1 10min (600s)
+int podlewanieZ2 = 600;               //Z2 10min (600s)
+byte wateringHour = 20;               //Hour of starting watering
+byte wateringMinute = 15;             //Minute of stariting watering
+boolean podlewanieRainSensor = false; //Rain logical indicator
 
 // Current time
 unsigned long currentTime = millis();
@@ -168,15 +170,27 @@ const long timeoutTime = 2000;
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
 byte mac[] = {
-    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xE8};
+    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 IPAddress ip(172, 26, 160, 16);
+IPAddress dns(172, 26, 160, 254);
+IPAddress gateway(172, 26, 160, 254);
+IPAddress subnet(255, 255, 255, 0);
+
+unsigned int localPort = 8888;             // local port to listen for UDP packets
+//const char timeServer[] = "time.nist.gov"; // time.nist.gov NTP server
+const char timeServer[] = "pl.pool.ntp.org";
+const int NTP_PACKET_SIZE = 48;            // NTP time stamp is in the first 48 bytes of the message
+byte packetBuffer[NTP_PACKET_SIZE];        //buffer to hold incoming and outgoing packets
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
+
+EthernetUDP Udp;
 EthernetServer server(80);
 
 boolean trigger(byte);
+void sendNTPpacket(const char *address);
 
 void setup()
 {
@@ -233,7 +247,7 @@ void setup()
     //Serial.println("Ethernet WebServer Example");
 
     //start the Ethernet connection and the server :
-    Ethernet.begin(mac, ip);
+    Ethernet.begin(mac, ip, dns, gateway, subnet);
 
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware)
@@ -246,13 +260,97 @@ void setup()
     }
     if (Ethernet.linkStatus() == LinkOFF)
     {
-        //Serial.println("Ethernet cable is not connected.");
+        Serial.println("Ethernet cable is not connected.");
     }
+
+    Serial.print("Udp begin\n");
+    Udp.begin(localPort); //Start UDP
+    Serial.print("Ip: ");
+    Serial.println(Ethernet.localIP());
+    Serial.print("DNS server ip: ");
+    Serial.println(Ethernet.dnsServerIP());
+    Serial.print("gateway ip: ");
+    Serial.println(Ethernet.gatewayIP());
+    Serial.print("Subnet mask: ");
+    Serial.println(Ethernet.subnetMask());
+    Serial.print("Sent NTP packet\n");
+    sendNTPpacket(timeServer); // send an NTP packet to a time server
+    Serial.print("Read UDP\n");
+    delay(1000);
+    while (!Udp.parsePacket()) {
+        Serial.print("Proba odczytu\n");
+        };
+    //while (!Udp.parsePacket())
+    {
+        // the timestamp starts at byte 40 of the received packet and is four bytes,
+        // or two words, long. First, extract the two words:
+        Udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
+        unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+        unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+        // combine the four bytes (two words) into a long integer
+        // this is NTP time (seconds since Jan 1 1900):
+        unsigned long secsSince1900 = highWord << 16 | lowWord;
+        Serial.print("Seconds since Jan 1 1900 = ");
+        Serial.println(secsSince1900);
+
+        //----------------------------------------------------------------------------------
+
+        // now convert NTP time into everyday time:
+        Serial.print("Unix time = ");
+        // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+        const unsigned long seventyYears = 2208988800UL;
+        // subtract seventy years:
+        unsigned long epoch = secsSince1900 - seventyYears;
+        // print Unix time:
+        Serial.println(epoch);
+
+        Serial.print("Date:");
+
+        time_t utcCalc = epoch;
+        Serial.print(year(utcCalc));
+        Serial.print("-");
+        Serial.print(month(utcCalc));
+        Serial.print("-");
+        Serial.print(day(utcCalc));
+        Serial.print(" ");
+        Serial.print(hour(utcCalc));
+        Serial.print(":");
+        Serial.print(minute(utcCalc));
+
+
+        zegar.setYear((int)year(utcCalc));
+        zegar.setMonth((byte)(month(utcCalc)));
+        zegar.setMonthDay((byte)day(utcCalc));
+        zegar.setHour((byte)hour(utcCalc)+2);
+        zegar.setMinute((byte)minute(utcCalc));
+        today[0] = 0;
+        today[1] = zegar.getMinute();
+        today[2] = zegar.getHour();
+        today[3] = zegar.getMonthDay();
+        today[4] = zegar.getMonth();
+        today[5] = (byte)zegar.getYear() - 2000;
+        if (tardis.DayOfWeek(today) == 1) //When TimeLord shows 1 (Sunday)...
+        {
+            zegar.setWeekDay(7); //... we have to set 7 (our Sunday :)
+        }
+        else
+        {
+            zegar.setWeekDay(tardis.DayOfWeek(today) - 1); //If not, just decrement day of the week.
+        }
+        tardis.TimeZone(1 * 60); // tell TimeLord what timezone your RTC is synchronized to. You can ignore DST
+        // as long as the RTC never changes back and forth between DST and non-DST
+        tardis.Position(LATITUDE, LONGITUDE); // tell TimeLord where in the world we are
+        tardis.DstRules(3, 4, 10, 4, 60);
+        //Set up sunrise and sunset triggers
+        slonce.checkSun(zegar.getSecond(), zegar.getMinute(), zegar.getHour(), zegar.getMonthDay(), zegar.getMonth(), (byte)(zegar.getYear() - 2000), 1);
+    }
+    Udp.stop(); //stop UDP
+    //Ethernet.begin(mac, ip);
 
     // start the server
     server.begin();
-    //Serial.print("server is at ");
-    //Serial.println(Ethernet.localIP());
+    Serial.print("server is at ");
+    Serial.println(Ethernet.localIP());
     odliczanie.startTimer(20, 1);
     slonce.checkSun(zegar.getSecond(), zegar.getMinute(), zegar.getHour(), zegar.getMonthDay(), zegar.getMonth(), (byte)(zegar.getYear() - 2000), 1);
 }
@@ -296,12 +394,10 @@ void loop()
                             rolety.blindsStop(15); //Rolety lazienka gora stop
                         };
 
-
                         if (header.indexOf("GET /60/on") >= 0) //Rolety lazienka gora up
                         {
                             rolety.blindsDown(15); //Rolety lazienka gora up
                         };
-
 
                         if (header.indexOf("GET /59/on") >= 0) //Rolety lazienka gora down
                         {
@@ -313,12 +409,10 @@ void loop()
                             rolety.blindsStop(14); //Rolety lazienka gora stop
                         };
 
-
                         if (header.indexOf("GET /57/on") >= 0) //Rolety lazienka gora up
                         {
                             rolety.blindsDown(14); //Rolety lazienka gora up
                         };
-
 
                         if (header.indexOf("GET /56/on") >= 0) //Rolety lazienka gora down
                         {
@@ -330,12 +424,10 @@ void loop()
                             rolety.blindsStop(13); //Rolety lazienka gora stop
                         };
 
-
                         if (header.indexOf("GET /54/on") >= 0) //Rolety lazienka gora up
                         {
                             rolety.blindsDown(13); //Rolety lazienka gora up
                         };
-
 
                         if (header.indexOf("GET /53/on") >= 0) //Rolety lazienka gora down
                         {
@@ -347,12 +439,10 @@ void loop()
                             rolety.blindsStop(12); //Rolety kuchnia stop
                         };
 
-
                         if (header.indexOf("GET /51/on") >= 0) //Rolety kuchnia up
                         {
                             rolety.blindsDown(12); //Rolety kuchnia up
                         };
-
 
                         if (header.indexOf("GET /50/on") >= 0) //Rolety kuchnia down
                         {
@@ -364,12 +454,10 @@ void loop()
                             rolety.blindsStop(11); //Rolety Mikolaj stop
                         };
 
-
                         if (header.indexOf("GET /48/on") >= 0) //Rolety Mikolaj up
                         {
                             rolety.blindsDown(11); //Rolety Mikolaj up
                         };
-
 
                         if (header.indexOf("GET /47/on") >= 0) //Rolety Mikolaj down
                         {
@@ -381,12 +469,10 @@ void loop()
                             rolety.blindsStop(10); //Rolety salon taras male stop
                         };
 
-
                         if (header.indexOf("GET /45/on") >= 0) //Rolety salon taras male up
                         {
                             rolety.blindsDown(10); //Rolety salon taras male up
                         };
-
 
                         if (header.indexOf("GET /44/on") >= 0) //Rolety salon taras male down
                         {
@@ -398,12 +484,10 @@ void loop()
                             rolety.blindsStop(9); //Rolety pracownia balkon stop
                         };
 
-
                         if (header.indexOf("GET /42/on") >= 0) //Rolety pracownia balkon up
                         {
                             rolety.blindsDown(9); //Rolety pracownia balkon up
                         };
-
 
                         if (header.indexOf("GET /41/on") >= 0) //Rolety pracownia balkon down
                         {
@@ -415,12 +499,10 @@ void loop()
                             rolety.blindsStop(8); //Rolety lazienka dol, wiatrolap stop
                         };
 
-
                         if (header.indexOf("GET /39/on") >= 0) //Rolety lazienka dol, wiatrolap up
                         {
                             rolety.blindsDown(8); //Rolety lazienka dol, wiatrolap up
                         };
-
 
                         if (header.indexOf("GET /38/on") >= 0) //Rolety lazienka dol, wiatrolap down
                         {
@@ -432,12 +514,10 @@ void loop()
                             rolety.blindsStop(7); //Rolety ? stop
                         };
 
-
                         if (header.indexOf("GET /36/on") >= 0) //Rolety ? up
                         {
                             rolety.blindsDown(7); //Rolety ? up
                         };
-
 
                         if (header.indexOf("GET /35/on") >= 0) //Rolety ? down
                         {
@@ -449,12 +529,10 @@ void loop()
                             rolety.blindsStop(6); //Rolety salon taras wyjscie stop
                         };
 
-
                         if (header.indexOf("GET /33/on") >= 0) //Rolety salon taras wyjscie up
                         {
                             rolety.blindsDown(6); //Rolety salon taras wyjscie up
                         };
-
 
                         if (header.indexOf("GET /32/on") >= 0) //Rolety salon taras wyjscie down
                         {
@@ -466,12 +544,10 @@ void loop()
                             rolety.blindsStop(5); //Rolety pracownia male okno stop
                         };
 
-
                         if (header.indexOf("GET /30/on") >= 0) //Rolety pracownia male okno up
                         {
                             rolety.blindsDown(5); //Rolety pracownia male okno up
                         };
-
 
                         if (header.indexOf("GET /29/on") >= 0) //Rolety pracownia male okno down
                         {
@@ -483,12 +559,10 @@ void loop()
                             rolety.blindsStop(4); //Rolety ? stop
                         };
 
-
                         if (header.indexOf("GET /27/on") >= 0) //Rolety ? up
                         {
                             rolety.blindsDown(4); //Rolety ? up
                         };
-
 
                         if (header.indexOf("GET /26/on") >= 0) //Rolety ? down
                         {
@@ -500,12 +574,10 @@ void loop()
                             rolety.blindsStop(3); //Rolety Jagoda stop
                         };
 
-
                         if (header.indexOf("GET /24/on") >= 0) //Rolety Jagoda up
                         {
                             rolety.blindsDown(3); //Rolety Jagoda up
                         };
-
 
                         if (header.indexOf("GET /23/on") >= 0) //Rolety Jagoda down
                         {
@@ -517,12 +589,10 @@ void loop()
                             rolety.blindsStop(2); //Rolety salon ogrod stop
                         };
 
-
                         if (header.indexOf("GET /21/on") >= 0) //Rolety salon ogrod up
                         {
                             rolety.blindsDown(2); //Rolety salon ogrod up
                         };
-
 
                         if (header.indexOf("GET /20/on") >= 0) //Rolety salon ogrod down
                         {
@@ -534,18 +604,15 @@ void loop()
                             rolety.blindsStop(1); //Rolety sypialnia stop
                         };
 
-
                         if (header.indexOf("GET /18/on") >= 0) //Rolety sypialnia up
                         {
                             rolety.blindsDown(1); //Rolety sypialnia up
                         };
 
-
                         if (header.indexOf("GET /17/on") >= 0) //Rolety sypialnia down
                         {
                             rolety.blindsUp(1); //Rolety sypialnia down
                         };
-
 
                         if (header.indexOf("GET /16/on") >= 0) //Force blinds by light on
                         {
@@ -559,9 +626,8 @@ void loop()
 
                         if (header.indexOf("GET /15/on") >= 0) //Set light level to close blinds
                         {
-                            roletySetLightLevel=roletyCurrentLightLevel;
+                            roletySetLightLevel = roletyCurrentLightLevel;
                         };
-
 
                         if (header.indexOf("GET /14/off") >= 0) //Force Z2 to stop waterring
                         {
@@ -660,7 +726,6 @@ void loop()
                             Serial.println("Rolety w gore");
                             rolety.blindsUp(0);
                             odliczanie.startTimer(1500, 5); //Only 700ms
-
                         };
                         /*if (header.indexOf("GET /5/off") >= 0)
                         // {
@@ -771,7 +836,6 @@ void loop()
                         client.println((String)gardenLights);
                         client.println(F(" </h5>"));
 
-
                         // Display current state, and ON/OFF buttons for GPIO 5
                         //client.println("<p>GPIO 5 - State " + output5State + "</p>");
                         // If the output5State is off, it displays the ON button
@@ -785,7 +849,6 @@ void loop()
                             client.println(F("<p><a href=\"/2/off\"><button class=\"button button2\">Blinds Timer On</button></a>"));
                         };
 
-
                         if (!roletyLight)
                         {
                             client.println(F("<a href=\"/16/on\"><button class=\"button\">Light sensor off</button></a>"));
@@ -798,7 +861,6 @@ void loop()
                         client.println(F("<a href=\"/15/on\"><button class=\"button\">Set light level:"));
                         client.println((String)roletySetLightLevel);
                         client.println(F("</button></a></p>"));
-
 
                         if (!odliczanie.checkTimer(5)) //Blins up button
                         {
@@ -898,13 +960,21 @@ void loop()
                         client.println(F("<H3>Podlewanie</H3>"));
                         if (podlewanieRainSensor)
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false"" checked> Deszcz"));
+                            client.println(F("<p><input type="
+                                             "checkbox"
+                                             " onclick="
+                                             "return false"
+                                             " checked> Deszcz"));
                         }
                         else
                         {
-                            client.println(F("<p><input type=""checkbox"" onclick=""return false"" unchecked> Deszcz"));
+                            client.println(F("<p><input type="
+                                             "checkbox"
+                                             " onclick="
+                                             "return false"
+                                             " unchecked> Deszcz"));
                         }
-                        
+
                         if (podlewanieAuto)
                         {
                             client.println(F("<a href=\"/10/off\"><button class=\"button button2\">Podlewanie Auto</button></a>"));
@@ -1124,13 +1194,12 @@ void loop()
 
     if (gardenLights) //Check, if garden lights should be on
     {
-        digitalWrite(pin_gardenLights,LOW);
+        digitalWrite(pin_gardenLights, LOW);
     }
     else
     {
-        digitalWrite(pin_gardenLights,HIGH);
+        digitalWrite(pin_gardenLights, HIGH);
     }
-    
 
     if (podlewanieCykl == 1) //Starting watering cycle
     {
@@ -1185,7 +1254,7 @@ void loop()
     temperature3 = sensors.readTemperature(address3);
 
     roletyCurrentLightLevel = analogRead(pin_LightSensor); // Read light intensivity
-    podlewanieRainSensor=digitalRead(pin_RS); // Check rain sensor
+    podlewanieRainSensor = digitalRead(pin_RS);            // Check rain sensor
 }
 
 boolean trigger(int number)
@@ -1197,9 +1266,9 @@ boolean trigger(int number)
         if ((zegar.getHour() == slonce.sunRiseHour()) && (zegar.getMinute() == slonce.sunRiseMinute()) && (zegar.getSecond() == 0) && (!lockTrigger[number])) //If we have Sun Rise :)
         {
             //Serial.println("Trigger: jest wschód!");
-            lockTrigger[number] = true; //Locking trigger to start one time.
-            odliczanie.startTimer(18000000,15); //Locking blinds light trigger to start one time.
-            return true;                //Return 1.
+            lockTrigger[number] = true;          //Locking trigger to start one time.
+            odliczanie.startTimer(18000000, 15); //Locking blinds light trigger to start one time.
+            return true;                         //Return 1.
         }
         else
         {
@@ -1220,14 +1289,13 @@ boolean trigger(int number)
         {
             if (zegar.getSecond() != 0)
                 lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
-            
         }
-        
-        if ((roletyCurrentLightLevel==roletySetLightLevel)&&(!odliczanie.checkTimer(15))&&(roletyLight)) //If it is dark
+
+        if ((roletyCurrentLightLevel == roletySetLightLevel) && (!odliczanie.checkTimer(15)) && (roletyLight)) //If it is dark
         {
             //Serial.println("Trigger: jest ciemno!");
-            odliczanie.startTimer(3600000,15); //Locking trigger to start one time.
-            return true; 
+            odliczanie.startTimer(3600000, 15); //Locking trigger to start one time.
+            return true;
         }
         else
         {
@@ -1250,9 +1318,9 @@ boolean trigger(int number)
         }
         break;
     case 4:
-        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute()+5) && (zegar.getSecond() == 0) && (!gardenLights)) //If we have 5 minutes after Sun set and gardenLights are off:)
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute() + 5) && (zegar.getSecond() == 0) && (!gardenLights)) //If we have 5 minutes after Sun set and gardenLights are off:)
         {
-            gardenLights=true;
+            gardenLights = true;
             return true;
         }
         return false;
@@ -1260,10 +1328,33 @@ boolean trigger(int number)
     case 5:
         if ((zegar.getHour() == gardenLightsOffHour) && (zegar.getMinute() == gardenLightsOffMinute) && (zegar.getSecond() == 0) && (gardenLights)) //If we have 10 minutes past 2AM :)
         {
-            gardenLights=false;
+            gardenLights = false;
             return true;
         }
         return false;
         break;
     }
+}
+
+void sendNTPpacket(const char *address)
+{
+    // set all bytes in the buffer to 0
+    memset(packetBuffer, 0, NTP_PACKET_SIZE);
+    // Initialize values needed to form NTP request
+    // (see URL above for details on the packets)
+    packetBuffer[0] = 0b11100011; // LI, Version, Mode
+    packetBuffer[1] = 0;          // Stratum, or type of clock
+    packetBuffer[2] = 6;          // Polling Interval
+    packetBuffer[3] = 0xEC;       // Peer Clock Precision
+    // 8 bytes of zero for Root Delay & Root Dispersion
+    packetBuffer[12] = 49;
+    packetBuffer[13] = 0x4E;
+    packetBuffer[14] = 49;
+    packetBuffer[15] = 52;
+
+    // all NTP fields have been given values, now
+    // you can send a packet requesting a timestamp:
+    Udp.beginPacket(address, 123); // NTP requests are to port 123
+    Udp.write(packetBuffer, NTP_PACKET_SIZE);
+    Udp.endPacket();
 }
