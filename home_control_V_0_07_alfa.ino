@@ -231,6 +231,7 @@ void setup()
 
     Serial.begin(115200); //Starting serial
 
+    Serial.println("Starting...");
     Serial.print("Initializing SD card...");
 
     if (!SD.begin(4))
@@ -250,13 +251,15 @@ void setup()
     for (int i = 0; i < 5; i++)
         lockTrigger[i] = false;
 
-    logging.println("Initializing Dallas temperatu sensors...");
+    Serial.println("Initializing Dallas temperature sensors...");
+    logging.println("Initializing Dallas temperature sensors...");
 
     //Dallas temperature sensors:
     sensors.begin(12); //resolution 12
     sensors.request(); //request all the sensors
     // Open serial communications and wait for port to open:
 
+    Serial.println("Initializing timelord SunRise and SunSet library...");
     logging.println("Initializing timelord SunRise and SunSet library...");
 
     tardis.TimeZone(1 * 60); // tell TimeLord what timezone your RTC is synchronized to. You can ignore DST
@@ -271,6 +274,7 @@ void setup()
         //  Serial.println("To nie ma sensu! :(");
     }
 
+    Serial.println("Initializing Ethernet connection...");
     logging.println("Initializing Ethernet connection...");
     //start the Ethernet connection and the server :
     Ethernet.begin(mac, ip, dns, gateway, subnet);
@@ -278,6 +282,7 @@ void setup()
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware)
     {
+        Serial.println("No ethernet expansion shield");
         logging.println("No ethernet expansion shield");
     }
     if (Ethernet.linkStatus() == LinkOFF)
@@ -288,20 +293,20 @@ void setup()
 
     Udp.begin(localPort); //Start UDP
     logging.print("IP:");
-    logging.print(Ethernet.localIP());
+    logging.println(Ethernet.localIP());
     logging.print(" DNS server ip: ");
-    logging.print(Ethernet.dnsServerIP());
-    logging.print(" Gateway ip: ");
+    logging.println(Ethernet.dnsServerIP());
+    logging.println(" Gateway ip: ");
     logging.print(Ethernet.gatewayIP());
-    logging.print(" Subnet mask:");
+    logging.println(" Subnet mask:");
     logging.println(Ethernet.subnetMask());
 
     Serial.print("IP:");
-    Serial.print(Ethernet.localIP());
+    Serial.println(Ethernet.localIP());
     Serial.print(" DNS server ip: ");
-    Serial.print(Ethernet.dnsServerIP());
+    Serial.println(Ethernet.dnsServerIP());
     Serial.print(" gateway ip: ");
-    Serial.print(Ethernet.gatewayIP());
+    Serial.println(Ethernet.gatewayIP());
     Serial.print(" Subnet mask:");
     Serial.println(Ethernet.subnetMask());
 
@@ -314,8 +319,8 @@ void setup()
     {
         if (!odliczanie.checkTimer(0))
         {
-            Serial.println("NTP timeout. Setting any time.");
-            logging.println("NTP timeout. Setting any time.");
+            Serial.println("NTP timeout. Setting default time.");
+            logging.println("NTP timeout. Setting default time.");
             epoch = 1590183595; //a time to set anything
             break;
         }
@@ -329,6 +334,7 @@ void setup()
     unsigned long secsSince1900 = highWord << 16 | lowWord;
     // now convert NTP time into everyday time:
     Serial.print("Unix time = ");
+    logging.print("Unix time = ");
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
@@ -336,9 +342,10 @@ void setup()
         epoch = secsSince1900 - seventyYears; //if no timeout on getting NTP info
     // print Unix time:
     Serial.println(epoch);
+    logging.println(epoch);
     time_t utcCalc = epoch;
-    Serial.println("Date:" + (String)year(utcCalc) + "-" + (String)month(utcCalc) + "-" + (String)day(utcCalc) + " " + (String)hour(utcCalc) + ":" + (String)minute(utcCalc));
-    logging.println("Date:" + (String)year(utcCalc) + "-" + (String)month(utcCalc) + "-" + (String)day(utcCalc) + " " + (String)hour(utcCalc) + ":" + (String)minute(utcCalc));
+    Serial.println("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
+    logging.println("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
 
     zegar.setYear((int)year(utcCalc));
     zegar.setMonth((byte)(month(utcCalc)));
@@ -372,12 +379,14 @@ void setup()
     // start the server
     server.begin();
     Serial.print("server is at ");
+    logging.print("server is at ");
     Serial.println(Ethernet.localIP());
+    logging.println(Ethernet.localIP());
     odliczanie.startTimer(20, 1);
     slonce.checkSun(zegar.getSecond(), zegar.getMinute(), zegar.getHour(), zegar.getMonthDay(), zegar.getMonth(), (byte)(zegar.getYear() - 2000), 1);
     logging.close(); //Close logging file
 
-    odliczanie.startTimer(1000, 0);  //uptime
+    odliczanie.startTimer(1000, 0);   //uptime
     odliczanie.startTimer(300000, 1); //logging time - every 5 minutes
 }
 
@@ -866,7 +875,7 @@ void loop()
                         client.println(F("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}"));
                         client.println(F(".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;"));
                         client.println(F("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}"));
-                        client.println(F(".button2 {background-color: #77878A;}</style></head>"));
+                        client.println(F(".button2 {background-color: #77878A;}table, th, td {  border: 1px solid black;margin-left:auto;margin-right:auto;}</style></head>"));
                         // Web Page Heading
                         client.println(F("<body><H1>Home Control Domek Ozarow V0.07A</H1>"));
                         client.println(F("<h5> Dzis jest: "));
@@ -1161,19 +1170,30 @@ void loop()
                             client.println(F(" C</H5>"));
 
                             break;
-                        case 5:                                     //Show parameters sub-page
+                        case 5: //Show parameters sub-page
                             client.println("<H5>Logi:</H5>");
-                            logging = SD.open("log.txt"); //open parametrs file
+                            /*logging = SD.open("log.txt"); //open parametrs file
                             if (logging)
                             {
                                 Serial.println("Logs:");
-
                                 // read from the file until there's nothing else in it:
-                                while (logging.available())
+                                int line = 0;
+                                char ch;
+                                //while (logging.available())
+                                while (line < 50)
                                 {
-                                    //client.println("<br>");
-                                    client.write(logging.read());
-                                    //client.println("</p>");
+                                    if (logging.available())
+                                        ch = logging.read();
+                                    switch ((int)ch)
+                                    {
+                                    case 13:
+                                        client.println("<br>");
+                                        line++;
+                                        break;
+                                    default:
+                                        client.write(ch);
+                                        break;
+                                    }
                                 }
                                 // close the file:
                                 logging.close();
@@ -1182,19 +1202,86 @@ void loop()
                             {
                                 // if the file didn't open, print an error:
                                 client.println("error opening params.txt");
-                            }
+                            }*/
                             client.println("<H5>Parametry:</H5>");
                             logging = SD.open("params.txt"); //open parametrs file
                             if (logging)
                             {
                                 Serial.println("Parameters:");
+                                client.println(F("<table style="
+                                                 "background-color:#FFFFFF"
+                                                 "><tr><th>No.</th><th>Data</th><th>Godzina</th><th>Osw.</th><th>Temp1</th><th>Temp2</th><th>Temp3</th></tr>"));
                                 // read from the file until there's nothing else in it:
+                                unsigned long end_file_position = 0;       //Position in File
+                                unsigned long current_file_position = 0;   //Position in File
+                                unsigned long beginning_line_position = 0; //Position in File
+                                unsigned long current_line_position = 0;   //Position in File
+
+                                int line = 1; //Row counts in table
+                                char ch = 0;  //Char to show
                                 while (logging.available())
+                                    logging.read();                            //Go to the end of file
+                                end_file_position = logging.position();        //Remember the last position
+                                current_file_position = end_file_position - 2; //Set the current position to the end of file
+                                //client.println("<tr><td>" + (String)line + "</td><td>");
+                                while (line <= 50) //Show only 50 lines
                                 {
-                                    //client.println("<br>");
-                                    client.write(logging.read());
-                                    //client.println("<p>");
+                                    client.println("<tr><td>" + (String)line + "</td><td>");
+                                    //Find the beginning of the line (of beginning of file):
+                                    while (((int)ch != 13))
+                                    {
+                                        current_file_position--;             //move back to the file by two positions
+                                        logging.seek(current_file_position); //Move to current position
+                                        if (logging.available())
+                                        {
+                                            ch = logging.read(); //Read the char, if the file is still available
+                                        }
+                                        else
+                                            break;
+
+                                    }
+                                    beginning_line_position = current_file_position; //Remeber the line beginning position
+                                    current_file_position =current_file_position+ 2; //Go to the next char (current is 13, missing the next loop, another is 10)
+                                    logging.seek(current_file_position);
+                                    if (logging.available())
+                                        ch=logging.read(); //Move to next char - not chr13 :)
+                                    //Read the line from beginning to the end of line or end of file:
+                                    //Serial.print("Move 3 forward:" + (String)current_file_position + " Char:" + ch + " ");
+                                    //Serial.println(ch, DEC);
+                                    while ((int)ch != 13) //if we have the beginning of the line
+                                    {
+                                        if (logging.available())
+                                        {
+                                            ch = logging.read(); //Read the char, if the file is still available
+                                        }
+                                        else
+                                            break;
+                                        switch ((int)ch)
+                                        {
+                                        case 59:
+                                            client.write("</td><td>");
+                                            break;
+                                        default:
+                                            client.write(ch);
+                                            break;
+                                        }
+                                        logging.seek(current_file_position);
+
+                                        current_file_position++; //Go to the next char, till found 13 - loop break
+                                        //Serial.print("Display loop, EOF marker:" + (String)current_file_position + " Char:" + ch + " " + char(ch) + " ");
+                                        //Serial.println(ch, DEC);
+                                    }
+                                    //Change the line to next
+                                    client.write("</td></tr>");
+                                    line++;
+                                    current_file_position = beginning_line_position; //Move cursor to the beginning of the line
+                                    beginning_line_position = beginning_line_position - 3;
+                                    if (logging.available())
+                                    {
+                                        ch = logging.read(); //Read the char, if the file is still available
+                                    }
                                 }
+                                client.println("</td></tr></table>");
                                 // close the file:
                                 logging.close();
                             }
@@ -1380,14 +1467,14 @@ void loop()
     };
     if (!odliczanie.checkTimer(1)) //write parameters every 5 minutes
     {
-        Serial.println("Writeing parameters...");
+        Serial.println("Writing parameters...");
         odliczanie.resetTimer(1);
-        odliczanie.startTimer(30000, 1);
+        odliczanie.startTimer(300000, 1);
 
         logging = SD.open("params.txt", FILE_WRITE); //Open log file in SD card
 
         if (!logging)
-            Serial.println("Error opening parameters.txt"); //Write about opening errors, if any.
+            Serial.println("Error opening param.txt"); //Write about opening errors, if any.
         logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3);
         Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3);
         logging.close();
