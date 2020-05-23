@@ -25,6 +25,14 @@ c:\Users\gmroczkowski\Documents\Arduino\home_control\build\sketch\home_control_V
  C:\Users\gmroczkowski\Documents\Arduino\libraries\OneWire/OneWire.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\DS18B20/DS18B20.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Time-master/TimeLib.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\SD\src/SD.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\SD\src/utility/SdFat.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\SD\src/utility/Sd2Card.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\SD\src/utility/Sd2PinMap.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\SD\src/utility/SdInfo.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\SD\src/utility/FatStructs.h \
+ C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Print.h \
+ C:\Program\ Files\ (x86)\Arduino\libraries\SD\src/utility/SdFatUtil.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.cpp \
  C:\Users\gmroczkowski\Documents\Arduino\libraries\Timer\Timer.h \

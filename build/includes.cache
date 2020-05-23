@@ -41,6 +41,11 @@
   },
   {
     "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Include": "SD.h",
+    "Includepath": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src"
+  },
+  {
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "",
     "Includepath": null
   },
@@ -111,6 +116,31 @@
   },
   {
     "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\Time-master\\Time.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\File.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\SD.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\Sd2Card.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\SdFile.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\SdVolume.cpp",
     "Include": "",
     "Includepath": null
   }
