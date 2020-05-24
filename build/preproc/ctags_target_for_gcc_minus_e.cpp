@@ -69,7 +69,20 @@
 # 52 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 2
 # 53 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 2
 # 54 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 2
-# 68 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+
+
+
+
+//#define pin_BS 24           //Blinds stop - turn off - blinds now using RF
+//#define pin_BU 27           //Blinds up - turn off - blinds now using RF
+//#define pin_BD 26           //Blinss down - turn off - blinds now using RF
+
+
+
+
+
+
+
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
 
 // Dallas temperature sensors address:
@@ -107,11 +120,12 @@ Blinds rolety;
 // Auxiliar variables to store the current output state
 boolean roletyAuto = true;
 
-boolean roletyLight = true; //Turn on blinds down by light
+boolean roletyLight = false; //Turn on blinds down by light
 int roletySetLightLevel = 600; //Set light level
 int roletyCurrentLightLevel = 600; //Set light level
 
 boolean gardenLights = false; //Garden lights variable
+boolean gardenLightsAuto = true; //Auto on for gardern lights
 byte gardenLightsOffHour = 2; //Hour to off gardenLights
 byte gardenLightsOffMinute = 10; //Minutes to off gardenLights
 
@@ -201,11 +215,7 @@ EthernetServer server(80);
 boolean trigger(byte);
 void sendNTPpacket(const char *address);
 
-File logging;
-File blinds;
-File watering;
-File heating;
-File parameters;
+File logging; //write log to SD card
 
 void setup()
 {
@@ -215,24 +225,24 @@ void setup()
     pinMode(23 /*droping line*/, 0x1);
     pinMode(22 /*Z1 watering circut*/, 0x1);
     pinMode(25 /*Z2 watering circut*/, 0x1);
-    pinMode(27 /*Blinds up*/, 0x1);
-    pinMode(26 /*Blinss down*/, 0x1);
-    pinMode(24 /*Blinds stop*/, 0x1);
+    //pinMode(pin_BU, OUTPUT); // - turn off - blinds now using RF
+    //pinMode(pin_BD, OUTPUT); // - turn off - blinds now using RF
+    //pinMode(pin_BS, OUTPUT); // - turn off - blinds now using RF
     pinMode(29 /*Heating upstairs*/, 0x1);
     pinMode(28 /*Heating downstairs*/, 0x1);
     pinMode(30 /*Rain sensor input*/, 0x0);
     pinMode(0 /*Light sensor for blinds analog input*/, 0x0);
-    pinMode(32 /*Garden lights output*/, 0x1);
+    pinMode(24 /*Garden lights output*/, 0x1);
     // Set outputs to HIGH
     digitalWrite(23 /*droping line*/, 0x1);
     digitalWrite(22 /*Z1 watering circut*/, 0x1);
     digitalWrite(25 /*Z2 watering circut*/, 0x1);
-    digitalWrite(27 /*Blinds up*/, 0x1);
-    digitalWrite(26 /*Blinss down*/, 0x1);
-    digitalWrite(24 /*Blinds stop*/, 0x1);
+    //digitalWrite(pin_BU, HIGH); // - turn off - blinds now using RF
+    //digitalWrite(pin_BD, HIGH); // - turn off - blinds now using RF
+    //digitalWrite(pin_BS, HIGH); // - turn off - blinds now using RF
     digitalWrite(29 /*Heating upstairs*/, 0x1);
     digitalWrite(28 /*Heating downstairs*/, 0x1);
-    digitalWrite(32 /*Garden lights output*/, 0x1);
+    digitalWrite(24 /*Garden lights output*/, 0x1);
 
     Serial.begin(115200); //Starting serial
 
@@ -251,13 +261,13 @@ void setup()
     if (!logging)
         Serial.println("Error opening log.txt"); //Write about opening errors, if any.
 
-    logging.println("Starting...");
+    logWrite("Starting...");
 
     for (int i = 0; i < 5; i++)
         lockTrigger[i] = false;
 
     Serial.println("Initializing Dallas temperature sensors...");
-    logging.println("Initializing Dallas temperature sensors...");
+    logWrite("Initializing Dallas temperature sensors...");
 
     //Dallas temperature sensors:
     sensors.begin(12); //resolution 12
@@ -265,7 +275,7 @@ void setup()
     // Open serial communications and wait for port to open:
 
     Serial.println("Initializing timelord SunRise and SunSet library...");
-    logging.println("Initializing timelord SunRise and SunSet library...");
+    logWrite("Initializing timelord SunRise and SunSet library...");
 
     tardis.TimeZone(1 * 60); // tell TimeLord what timezone your RTC is synchronized to. You can ignore DST
     // as long as the RTC never changes back and forth between DST and non-DST
@@ -280,30 +290,31 @@ void setup()
     }
 
     Serial.println("Initializing Ethernet connection...");
-    logging.println("Initializing Ethernet connection...");
+    logWrite("Initializing Ethernet connection...");
     //start the Ethernet connection and the server :
     Ethernet.begin(mac, ip, dns, gateway, subnet);
 
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware)
     {
-        logging.println("No ethernet expansion shield");
+        Serial.println("No ethernet expansion shield");
+        logWrite("No ethernet expansion shield");
     }
     if (Ethernet.linkStatus() == LinkOFF)
     {
         Serial.println("Ethernet cable is not connected.");
-        logging.println("Ethernet cable is not connected.");
+        logWrite("Ethernet cable is not connected.");
     }
 
     Udp.begin(localPort); //Start UDP
-    logging.print("IP:");
-    logging.println(Ethernet.localIP());
-    logging.print(" DNS server ip: ");
-    logging.println(Ethernet.dnsServerIP());
-    logging.println(" Gateway ip: ");
-    logging.print(Ethernet.gatewayIP());
-    logging.println(" Subnet mask:");
-    logging.println(Ethernet.subnetMask());
+    logWrite("IP:");
+    logWrite((String)Ethernet.localIP());
+    logWrite(" DNS server ip: ");
+    logWrite((String)Ethernet.dnsServerIP());
+    logWrite(" Gateway ip: ");
+    logWrite((String)Ethernet.gatewayIP());
+    logWrite(" Subnet mask:");
+    logWrite((String)Ethernet.subnetMask());
 
     Serial.print("IP:");
     Serial.println(Ethernet.localIP());
@@ -314,7 +325,7 @@ void setup()
     Serial.print(" Subnet mask:");
     Serial.println(Ethernet.subnetMask());
 
-    logging.println("Getting the current Date and Time from NTP server...");
+    logWrite("Getting the current Date and Time from NTP server...");
     Serial.println("Getting the current Date and Time from NTP server...");
     sendNTPpacket(timeServer); // send an NTP packet to a time server
     odliczanie.startTimer(60000, 0); // timer 60s for timeout of NTP receive packet
@@ -324,7 +335,7 @@ void setup()
         if (!odliczanie.checkTimer(0))
         {
             Serial.println("NTP timeout. Setting default time.");
-            logging.println("NTP timeout. Setting default time.");
+            logWrite("NTP timeout. Setting default time.");
             epoch = 1590183595; //a time to set anything
             break;
         }
@@ -338,6 +349,7 @@ void setup()
     unsigned long secsSince1900 = highWord << 16 | lowWord;
     // now convert NTP time into everyday time:
     Serial.print("Unix time = ");
+    logWrite("Unix time = ");
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
@@ -345,9 +357,10 @@ void setup()
         epoch = secsSince1900 - seventyYears; //if no timeout on getting NTP info
     // print Unix time:
     Serial.println(epoch);
+    logWrite((String)epoch);
     time_t utcCalc = epoch;
     Serial.println("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
-    logging.println("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
+    logWrite("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
 
     zegar.setYear((int)year(utcCalc));
     zegar.setMonth((byte)(month(utcCalc)));
@@ -381,7 +394,9 @@ void setup()
     // start the server
     server.begin();
     Serial.print("server is at ");
+    logWrite("server is at ");
     Serial.println(Ethernet.localIP());
+    logWrite((String)Ethernet.localIP());
     odliczanie.startTimer(20, 1);
     slonce.checkSun(zegar.getSecond(), zegar.getMinute(), zegar.getHour(), zegar.getMonthDay(), zegar.getMonth(), (byte)(zegar.getYear() - 2000), 1);
     logging.close(); //Close logging file
@@ -425,6 +440,42 @@ void loop()
                         //client.println("Refresh: 5");  // refresh the page automatically every 5 sec
                         client.println();
 
+                        if (header.indexOf("GET /71/off") >= 0) //Garder lighs off
+                        {
+
+                            gardenLights = false;
+                        };
+
+                        if (header.indexOf("GET /71/on") >= 0) //Garder lighs on
+                        {
+
+                            gardenLights = true;
+                        };
+
+                        if (header.indexOf("GET /70/off") >= 0) //Auto garden lights off
+                        {
+
+                            gardenLightsAuto = false;
+                        };
+
+                        if (header.indexOf("GET /70/on") >= 0) //Auto garder lights on
+                        {
+
+                            gardenLightsAuto = true;
+                        };
+
+                        if (header.indexOf("GET /69/on") >= 0) //Show garden lights
+                        {
+
+                            podstrona = 7; //Set content parameter to 6 - show garden lights settings
+                        };
+
+                        if (header.indexOf("GET /68/on") >= 0) //Show log page
+                        {
+
+                            podstrona = 6; //Set content parameter to 6 - show log page
+                        };
+
                         if (header.indexOf("GET /67/on") >= 0) //Show heating page
                         {
                             podstrona = 4; //Set content parameter to 4 - heating
@@ -450,9 +501,9 @@ void loop()
                             podstrona = 0; //Set content variable to 0 - main page
                         };
 
-                        if (header.indexOf("GET /62/on") >= 0) //Rolety lazienka gora stop
+                        if (header.indexOf("GET /62/on") >= 0) //Show parameters page
                         {
-                            podstrona = 5; //Rolety lazienka gora stop
+                            podstrona = 5; //Show parameters page
                         };
 
                         if (header.indexOf("GET /61/on") >= 0) //Rolety lazienka gora stop
@@ -791,25 +842,14 @@ void loop()
                         {
                             Serial.println("Rolety w gore");
                             rolety.blindsUp(0);
-                            odliczanie.startTimer(1500, 5); //Only 700ms
+                            //odliczanie.startTimer(1500, 5); //Only 700ms  - turn off - blinds now using RF
                         };
-                        /*if (header.indexOf("GET /5/off") >= 0)
 
-                        // {
-
-                            //Serial.println("Rolety w gore zatrzymane");
-
-                            podniesRolety = "off";
-
-                            digitalWrite(pin_BU, HIGH);
-
-                        };*/
-# 797 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                         if (header.indexOf("GET /4/on") >= 0) //Blinds down
                         {
                             Serial.println("Rolety w dol");
                             rolety.blindsDown(0);
-                            odliczanie.startTimer(1500, 4); //Only 700ms
+                            //odliczanie.startTimer(1500, 4); //Only 700ms  - turn off - blinds now using RF
                         };
                         //if (header.indexOf("GET /4/off") >= 0)
                         //{
@@ -820,31 +860,20 @@ void loop()
                         {
                             Serial.println("Rolety w stop");
                             rolety.blindsStop(0);
-                            odliczanie.startTimer(1500, 3); //Only 700ms
+                            //odliczanie.startTimer(1500, 3); //Only 700ms  - turn off - blinds now using RF
                         };
-                        /*if (header.indexOf("GET /3/off") >= 0)
 
-                        {
-
-                            //Serial.println("Rolety stop zatrzymane");
-
-                            zatrzymajRolety = "off";
-
-                            digitalWrite(pin_BS, HIGH);
-
-                        };*/
-# 820 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                         if (header.indexOf("GET /2/on") >= 0) //Blins auto up and down by SunRise and SunSet
                         {
                             //Serial.println("Auto");
                             roletyAuto = true;
-                            //digitalWrite(pin_BS, LOW);
+                            //digitalWrite(pin_BS, LOW);  - turn off - blinds now using RF
                         };
                         if (header.indexOf("GET /2/off") >= 0) //Blins auto off
                         {
                             //Serial.println("Manual");
                             roletyAuto = false;
-                            //digitalWrite(pin_BS, HIGH);
+                            //digitalWrite(pin_BS, HIGH); - turn off - blinds now using RF
                         };
 
                         if (header.indexOf("GET /zegar/") >= 0)
@@ -880,227 +909,245 @@ void loop()
                         };
                         // Display the HTML web page
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 865 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 893 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 865 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 893 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "<!DOCTYPE html><html>"
-# 865 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 893 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 865 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 893 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 866 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 894 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 866 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 894 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-# 866 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 894 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 866 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 894 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 867 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 895 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 867 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 895 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "<link rel=\"icon\" href=\"data:,\">"
-# 867 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 895 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 867 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 895 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         // CSS to style the on/off buttons
                         // Feel free to change the background-color and font-size attributes to fit your preferences
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 870 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 870 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}"
-# 870 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 870 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 871 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 871 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       ".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;"
-# 871 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 871 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 872 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 872 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}"
-# 872 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 872 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 873 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 901 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 873 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 901 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       ".button2 {background-color: #77878A;}table, th, td {  border: 1px solid black;margin-left:auto;margin-right:auto;}</style></head>"
-# 873 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 901 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 873 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 901 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         // Web Page Heading
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 875 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 875 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
-                                      "<body><H1>Home Control Domek Ozarow V0.07A</H1>"
-# 875 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                      "<body><H1>Home Control Ozarow V0.07B</H1>"
+# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 875 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 876 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 904 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 876 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 904 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "<h5> Dzis jest: "
-# 876 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 904 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 876 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 904 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println(zegar.getDate());
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 878 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 906 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 878 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 906 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       " "
-# 878 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 906 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 878 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 906 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println(zegar.getWeekDay());
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 880 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 908 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 880 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 908 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       " godzina: "
-# 880 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 908 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 880 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 908 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println(zegar.getTime());
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 882 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 910 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 882 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 910 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       " Uptime: "
-# 882 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 910 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 882 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 910 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println(odliczanie.leadingZero(hour(uptime)));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 884 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 912 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 884 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 912 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       ":"
-# 884 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 912 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 884 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 912 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println(odliczanie.leadingZero(minute(uptime)));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 886 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 914 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 886 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 914 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       ":"
-# 886 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 914 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 886 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 914 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println(odliczanie.leadingZero(second(uptime)));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 888 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 916 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 888 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 916 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       " </h5>"
-# 888 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 916 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 888 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 916 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 889 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 917 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 889 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 917 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "<h5>Temperatura zewnetrzna: <B>"
-# 889 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 917 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 889 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 917 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         client.println((String)temperature1);
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 891 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 891 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       " C</B></H5>"
-# 891 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 891 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
 
                         switch (podstrona)
                         {
                         case 0: //main page
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 896 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 896 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/64/on\"><button class=\"button button\">Rolety</button></a>"
-# 896 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 896 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 897 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 897 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/65/on\"><button class=\"button button\">Timery rolet</button></a>"
-# 897 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 897 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 926 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 926 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                          "<a href=\"/69/on\"><button class=\"button button\">Oswietlenie ogrodu</button></a>"
+# 926 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                          ); &__c[0];}))
+# 926 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                          )));
+                            client.println((reinterpret_cast<const __FlashStringHelper *>(
+# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                          (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/66/on\"><button class=\"button button\">Podlewanie</button></a>"
-# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 898 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/67/on\"><button class=\"button button\">Ogrzewanie</button></a>"
-# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 899 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
-                                          "<a href=\"/62/on\"><button class=\"button button\">Odczyt parametrow</button></a></p>"
-# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                          "<a href=\"/62/on\"><button class=\"button button\">Odczyt parametrow</button></a>"
+# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 900 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                          )));
+                            client.println((reinterpret_cast<const __FlashStringHelper *>(
+# 930 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                          (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 930 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                          "<a href=\"/68/on\"><button class=\"button button\">Logi</button></a></p>"
+# 930 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                          ); &__c[0];}))
+# 930 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             break;
                         case 1:
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<H3>Rolety</H3>"
-# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 903 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             /* Numery rolet, ktore nie sa uzywane, zostaly wykomentowane.
 
@@ -1129,430 +1176,430 @@ void loop()
                             client.println(F("<a href=\"/61/on\"><button class=\"button button\">STOP!</button></a></p>"));
 
                             */
-# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/47/on\"><button class=\"button button\">Rolety Mikolaj (13) w gore</button></a>"
-# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 919 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 920 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 950 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 920 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 950 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/48/on\"><button class=\"button button\">W dol</button></a>"
-# 920 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 950 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 920 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 950 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 921 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 921 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/49/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 921 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 921 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 923 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 923 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/23/on\"><button class=\"button button\">Rolety Jagoda (12) w gore</button></a>"
-# 923 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 923 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 954 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 954 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/24/on\"><button class=\"button button\">W dol</button></a>"
-# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 954 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 924 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 954 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/25/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 925 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/53/on\"><button class=\"button button\">Rolety lazienka pietro (11) w gore</button></a>"
-# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 927 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 958 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 958 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/54/on\"><button class=\"button button\">W dol</button></a>"
-# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 958 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 928 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 958 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/55/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 929 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 931 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 931 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/29/on\"><button class=\"button button\">Rolety pracownia male (10) w gore</button></a>"
-# 931 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 931 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 932 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 962 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 932 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 962 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/30/on\"><button class=\"button button\">W dol</button></a>"
-# 932 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 962 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 932 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 962 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/31/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 933 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 935 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 935 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/41/on\"><button class=\"button button\">Rolety pracownia balkon (9) w gore</button></a>"
-# 935 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 935 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 936 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 966 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 936 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 966 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/42/on\"><button class=\"button button\">W dol</button></a>"
-# 936 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 966 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 936 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 966 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 937 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 967 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 937 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 967 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/43/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 937 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 967 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 937 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 967 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 939 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 939 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/17/on\"><button class=\"button button\">Rolety w sypialni (8) w gore</button></a>"
-# 939 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 939 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 940 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 970 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 940 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 970 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/18/on\"><button class=\"button button\">W dol</button></a>"
-# 940 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 970 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 940 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 970 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 941 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 941 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/19/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 941 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 941 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 943 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 943 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/56/on\"><button class=\"button button\">Rolety salon taras slepe (7) w gore</button></a>"
-# 943 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 943 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 944 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 974 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 944 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 974 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/57/on\"><button class=\"button button\">W dol</button></a>"
-# 944 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 974 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 944 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 974 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 945 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 945 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/58/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 945 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 945 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 947 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 947 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/32/on\"><button class=\"button button\">Rolety salon taras wejsciowe (6) w gore</button></a>"
-# 947 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 947 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 948 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 978 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 948 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 978 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/33/on\"><button class=\"button button\">W dol</button></a>"
-# 948 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 978 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 948 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 978 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/34/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 949 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 981 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 981 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/44/on\"><button class=\"button button\">Rolety salon od tarasu (5) w gore</button></a>"
-# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 981 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 951 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 981 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 952 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 952 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/45/on\"><button class=\"button button\">W dol</button></a>"
-# 952 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 952 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 983 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 983 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/46/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 983 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 953 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 983 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 985 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 985 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/20/on\"><button class=\"button button\">Rolety salon od ogrodu (4) w gore</button></a>"
-# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 985 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 955 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 985 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 956 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 986 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 956 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 986 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/21/on\"><button class=\"button button\">W dol</button></a>"
-# 956 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 986 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 956 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 986 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 987 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 987 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/22/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 987 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 957 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 987 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 989 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 989 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/50/on\"><button class=\"button button\">Rolety kuchnia (3) w gore</button></a>"
-# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 989 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 959 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 989 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 960 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 960 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/51/on\"><button class=\"button button\">W dol</button></a>"
-# 960 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 960 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 991 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 991 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/52/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 991 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 961 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 991 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 993 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 993 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<p><a href=\"/38/on\"><button class=\"button button\">Rolety wiatrolap, lazienka parter (1,2) w gore</button></a>"
-# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 993 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 963 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 993 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 964 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 964 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/39/on\"><button class=\"button button\">W dol</button></a>"
-# 964 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 964 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 995 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 995 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/40/on\"><button class=\"button button\">STOP!</button></a></p>"
-# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 995 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 965 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 995 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             break;
                         case 2:
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 968 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 998 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 968 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 998 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<H3>Rolety</H3>"
-# 968 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 998 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 968 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 998 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           " <h5> Wschod slonca: "
-# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 969 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)slonce.sunRiseHour());
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1001 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1001 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           ":"
-# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1001 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 971 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1001 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)slonce.sunRiseMinute());
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "</h5><h5> Zachod slonca: "
-# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 973 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)slonce.sunSetHour());
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1005 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1005 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           ":"
-# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1005 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 975 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1005 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)slonce.sunSetMinute());
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1007 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1007 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           " </h5><h5> Sensor swiatla: "
-# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1007 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 977 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1007 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)roletyCurrentLightLevel);
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1009 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1009 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           " </h5>"
-# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1009 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 979 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1009 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 980 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1010 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 980 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1010 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           " </h5><h5> Lampy w ogrodzie: "
-# 980 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1010 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 980 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1010 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)gardenLights);
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           " </h5>"
-# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 982 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             // Display current state, and ON/OFF buttons for GPIO 5
@@ -1562,95 +1609,95 @@ void loop()
                             if (!roletyAuto)
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1020 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1020 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/2/on\"><button class=\"button\">Blinds Timer Off</button></a>"
-# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1020 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 990 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1020 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/2/off\"><button class=\"button button2\">Blinds Timer On</button></a>"
-# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 994 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
 
                             if (!roletyLight)
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1029 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1029 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/16/on\"><button class=\"button\">Light sensor off</button></a>"
-# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1029 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 999 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1029 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/16/off\"><button class=\"button button2\">Light sensor on</button></a>"
-# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1003 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1006 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1006 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<a href=\"/15/on\"><button class=\"button\">Set light level:"
-# 1006 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 1006 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)roletySetLightLevel);
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1008 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1038 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1008 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1038 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "</button></a></p>"
-# 1008 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1038 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 1008 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1038 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             if (!odliczanie.checkTimer(5)) //Blins up button
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1042 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1042 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/5/on\"><button class=\"button\">Podnies rolety</button></a>"
-# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1042 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1012 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1042 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1016 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1046 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1016 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1046 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/3/on\"><button class=\"button\">Rolety stop</button></a>"
-# 1016 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1046 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1016 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1046 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
 
@@ -1660,49 +1707,49 @@ void loop()
                             if (!odliczanie.checkTimer(4)) //Blins down button
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1054 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1054 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/4/on\"><button class=\"button\">Opusc rolety</button></a></p>"
-# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1054 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1024 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1054 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1028 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1058 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1028 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1058 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/3/on\"><button class=\"button\">Rolety stop</button></a></p>"
-# 1028 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1058 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1028 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1058 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
                             break;
                         case 3:
                             //--------------Podlewanie:
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1063 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1063 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<H3>Podlewanie</H3>"
-# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1063 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 1033 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1063 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             if (podlewanieRainSensor)
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><input type=" "checkbox" " onclick=" "return false" " checked> Deszcz"
-# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1036 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               ))
 
 
@@ -1712,13 +1759,13 @@ void loop()
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1044 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1074 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1044 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1074 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><input type=" "checkbox" " onclick=" "return false" " unchecked> Deszcz"
-# 1044 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1074 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1044 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1074 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               ))
 
 
@@ -1729,168 +1776,168 @@ void loop()
                             if (podlewanieAuto)
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1053 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1083 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1053 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1083 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/10/off\"><button class=\"button button2\">Podlewanie Auto</button></a>"
-# 1053 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1083 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1053 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1083 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1057 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1087 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1057 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1087 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/10/on\"><button class=\"button \">Podlewanie Reczne</button></a>"
-# 1057 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1087 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1057 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1087 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
 
                             if (podlewanieCykl == 0)
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1062 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1092 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1062 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1092 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/11/on\"><button class=\"button\">Start cyklu podlewania</button></a>"
-# 1062 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1092 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1062 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1092 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1096 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1096 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/11/off\"><button class=\"button button2\">Cykl podlewanie w trakcie, nadzisnij by zatrzymac</button></a>"
-# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1096 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1066 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1096 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
 
                             if (!odliczanie.checkTimer(12))
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1071 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1101 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1071 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1101 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/12/on\"><button class=\"button\">Start LK</button></a>"
-# 1071 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1101 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1071 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1101 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1075 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1105 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1075 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1105 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/12/off\"><button class=\"button button2\">Stop LK za "
-# 1075 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1105 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1075 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1105 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println(odliczanie.getTime(12));
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1077 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1107 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1077 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1107 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "</button></a>"
-# 1077 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1107 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1077 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1107 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
 
                             if (!odliczanie.checkTimer(13))
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1082 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1112 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1082 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1112 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/13/on\"><button class=\"button\">Start Z1</button></a>"
-# 1082 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1112 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1082 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1112 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1086 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1116 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1086 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1116 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/13/off\"><button class=\"button button2\">Stop Z1 za "
-# 1086 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1116 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1086 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1116 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println(odliczanie.getTime(13));
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1088 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1118 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1088 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1118 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "</button></a>"
-# 1088 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1118 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1088 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1118 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
 
                             if (!odliczanie.checkTimer(14))
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1093 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1123 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1093 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1123 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/14/on\"><button class=\"button\">Start Z2</button></a></p>"
-# 1093 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1123 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1093 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1123 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1097 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1127 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1097 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1127 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/14/off\"><button class=\"button button2\">Stop Z2 za "
-# 1097 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1127 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1097 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1127 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println(odliczanie.getTime(14));
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1099 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1129 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1099 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1129 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "</button></a></p>"
-# 1099 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1129 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1099 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1129 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
 
                             break;
                         case 4:
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1104 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1134 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1104 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1134 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<H3>Ogrzewanie</H3>"
-# 1104 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1134 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 1104 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1134 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             //<H5>Temperatura na parterze: "));
                             //client.println((String)temperature2);
@@ -1901,297 +1948,233 @@ void loop()
                             if (ogrzewaniePietroDzien) //Upstairs day mode button
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1113 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1143 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1113 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1143 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/6/off\"><button class=\"button\">Pietro "
-# 1113 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1143 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1113 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1143 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println((String)temperature3);
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1115 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1145 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1115 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1145 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "'C dzien</button></a>"
-# 1115 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1145 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1115 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1145 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else //Upstairs night mode button
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1119 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1149 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1119 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1149 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/6/on\"><button class=\"button button2\">Pietro "
-# 1119 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1149 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1119 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1149 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println((String)temperature3);
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1121 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1121 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "'C noc</button></a>"
-# 1121 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1121 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
 
                             if (!odliczanie.checkTimer(7)) //Force heat upstairs button
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1126 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1156 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1126 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1156 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/7/on\"><button class=\"button\">10 min. On</button></a></p>"
-# 1126 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1156 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1126 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1156 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1130 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1160 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1130 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1160 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/7/on\"><button class=\"button button2\">"
-# 1130 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1160 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1130 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1160 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println(odliczanie.getTime(7));
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1132 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1162 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1132 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1162 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "</button></a>"
-# 1132 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1162 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1132 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1162 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1133 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1133 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/7/off\"><button class=\"button\">STOP!</button></a></p>"
-# 1133 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1133 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             };
                             //----------------Ogrzewanie Parter
                             if (ogrzewanieParterDzien) //Downstairs day mode button
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1138 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1138 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/8/off\"><button class=\"button\">Parter "
-# 1138 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1138 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1168 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println((String)temperature2);
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1140 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1170 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1140 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1170 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "'C dzien</button></a>"
-# 1140 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1170 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1140 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1170 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else //Downstairs night mode button
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1144 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1144 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<p><a href=\"/8/on\"><button class=\"button button2\">Parter "
-# 1144 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1144 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1174 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println((String)temperature2);
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1146 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1176 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1146 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1176 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "'C noc</button></a>"
-# 1146 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1176 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1146 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1176 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
 
                             if (!odliczanie.checkTimer(9))
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1181 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1181 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/9/on\"><button class=\"button\">10 min. On</button></a></p>"
-# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1181 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1151 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1181 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
                             else
                             {
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1155 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1185 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1155 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1185 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/9/on\"><button class=\"button button2\">"
-# 1155 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1185 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1155 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1185 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println(odliczanie.getTime(9));
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1157 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1187 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1157 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1187 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "</button></a>"
-# 1157 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1187 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1157 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1187 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1158 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1188 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1158 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1188 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               "<a href=\"/9/off\"><button class=\"button\">STOP!</button></a></p>"
-# 1158 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1188 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1158 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1188 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               )));
                             }
 
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1161 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1191 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1161 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1191 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           "<h5>Temperatura dzienna: "
-# 1161 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1191 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 1161 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1191 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)temperaturaDzien);
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1193 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1193 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           " C</H5><H5>Temperatura nocna: "
-# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1193 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 1163 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1193 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
                             client.println((String)temperaturaNoc);
                             client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1165 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1195 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1165 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1195 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           " C</H5>"
-# 1165 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1195 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                           ); &__c[0];}))
-# 1165 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1195 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                           )));
 
                             break;
                         case 5: //Show parameters sub-page
-                            client.println("<H5>Logi:</H5>");
-                            /*logging = SD.open("log.txt"); //open parametrs file
-
-                            if (logging)
-
-                            {
-
-                                Serial.println("Logs:");
-
-                                // read from the file until there's nothing else in it:
-
-                                int line = 0;
-
-                                char ch;
-
-                                //while (logging.available())
-
-                                while (line < 50)
-
-                                {
-
-                                    if (logging.available())
-
-                                        ch = logging.read();
-
-                                    switch ((int)ch)
-
-                                    {
-
-                                    case 13:
-
-                                        client.println("<br>");
-
-                                        line++;
-
-                                        break;
-
-                                    default:
-
-                                        client.write(ch);
-
-                                        break;
-
-                                    }
-
-                                }
-
-                                // close the file:
-
-                                logging.close();
-
-                            }
-
-                            else
-
-                            {
-
-                                // if the file didn't open, print an error:
-
-                                client.println("error opening params.txt");
-
-                            }*/
-# 1201 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                             client.println("<H5>Parametry:</H5>");
                             logging = SD.open("params.txt"); //open parametrs file
                             if (logging)
                             {
                                 Serial.println("Parameters:");
                                 client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1206 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1206 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
-                                              "<table style=" "background-color:#FFFFFF" "><tr><th>No.</th><th>Data</th><th>Godzina</th><th>Osw.</th><th>Temp1</th><th>Temp2</th><th>Temp3</th></tr>"
-# 1206 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              "<table style=" "background-color:#FFFFFF" "><tr><th>No.</th><th>Data</th><th>Godzina</th><th>Osw.</th><th>Temp1</th><th>Temp2</th><th>Temp3</th><th>Deszcz</th><th>Osw. ogr.</th></tr>"
+# 1204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                               ); &__c[0];}))
-# 1206 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                               ))
 
-                                                                                                                                                              );
+                                                                                                                                                                                               );
                                 // read from the file until there's nothing else in it:
                                 unsigned long end_file_position = 0; //Position in File
                                 unsigned long current_file_position = 0; //Position in File
                                 unsigned long beginning_line_position = 0; //Position in File
-                                unsigned long current_line_position = 0; //Position in File
 
                                 int line = 1; //Row counts in table
                                 char ch = 0; //Char to show
@@ -2199,8 +2182,7 @@ void loop()
                                     logging.read(); //Go to the end of file
                                 end_file_position = logging.position(); //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
-                                //client.println("<tr><td>" + (String)line + "</td><td>");
-                                while (line <= 50) //Show only 50 lines
+                                while (line <= 101) //Show only 100 lines
                                 {
                                     client.println("<tr><td>" + (String)line + "</td><td>");
                                     //Find the beginning of the line (of beginning of file):
@@ -2214,13 +2196,12 @@ void loop()
                                         }
                                         else
                                             break;
-
                                     }
                                     beginning_line_position = current_file_position; //Remeber the line beginning position
-                                    current_file_position =current_file_position+ 2; //Go to the next char (current is 13, missing the next loop, another is 10)
+                                    current_file_position = current_file_position + 2; //Go to the next char (current is 13, missing the next loop, another is 10)
                                     logging.seek(current_file_position);
                                     if (logging.available())
-                                        ch=logging.read(); //Move to next char - not chr13 :)
+                                        ch = logging.read(); //Move to next char - not chr13 :)
                                     //Read the line from beginning to the end of line or end of file:
                                     //Serial.print("Move 3 forward:" + (String)current_file_position + " Char:" + ch + " ");
                                     //Serial.println(ch, DEC);
@@ -2266,29 +2247,239 @@ void loop()
                                 // if the file didn't open, print an error:
                                 client.println("error opening params.txt");
                             }
-                            client.println("<H5>");
+                            break;
+                        case 6:
+                            //show log:
+
+                            logging = SD.open("logs.txt"); //open parametrs file
+                            if (logging)
+                            {
+                                Serial.println("Parameters:");
+                                client.println((reinterpret_cast<const __FlashStringHelper *>(
+# 1291 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 1291 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              "<table style=" "background-color:#FFFFFF" "><tr><th>No.</th><th>Data</th><th>Godzina</th><th>Info</th></tr>"
+# 1291 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              ); &__c[0];}))
+# 1291 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              ))
+
+                                                                                                                    );
+                                // read from the file until there's nothing else in it:
+                                unsigned long end_file_position = 0; //Position in File
+                                unsigned long current_file_position = 0; //Position in File
+                                unsigned long beginning_line_position = 0; //Position in File
+
+                                int line = 1; //Row counts in table
+                                char ch = 0; //Char to show
+                                while (logging.available())
+                                    logging.read(); //Go to the end of file
+                                end_file_position = logging.position(); //Remember the last position
+                                current_file_position = end_file_position - 2; //Set the current position to the end of file
+                                while (line <= 101) //Show only 100 lines
+                                {
+                                    client.println("<tr><td>" + (String)line + "</td><td>");
+                                    //Find the beginning of the line (of beginning of file):
+                                    while (((int)ch != 13))
+                                    {
+                                        current_file_position--; //move back to the file by two positions
+                                        logging.seek(current_file_position); //Move to current position
+                                        if (logging.available())
+                                        {
+                                            ch = logging.read(); //Read the char, if the file is still available
+                                        }
+                                        else
+                                            break;
+                                    }
+                                    beginning_line_position = current_file_position; //Remeber the line beginning position
+                                    current_file_position = current_file_position + 2; //Go to the next char (current is 13, missing the next loop, another is 10)
+                                    logging.seek(current_file_position);
+                                    if (logging.available())
+                                        ch = logging.read(); //Move to next char - not chr13 :)
+                                    //Read the line from beginning to the end of line or end of file:
+                                    //Serial.print("Move 3 forward:" + (String)current_file_position + " Char:" + ch + " ");
+                                    //Serial.println(ch, DEC);
+                                    while ((int)ch != 13) //if we have the beginning of the line
+                                    {
+                                        if (logging.available())
+                                        {
+                                            ch = logging.read(); //Read the char, if the file is still available
+                                        }
+                                        else
+                                            break;
+                                        switch ((int)ch)
+                                        {
+                                        case 59:
+                                            client.write("</td><td>");
+                                            break;
+                                        default:
+                                            client.write(ch);
+                                            break;
+                                        }
+                                        logging.seek(current_file_position);
+
+                                        current_file_position++; //Go to the next char, till found 13 - loop break
+                                        //Serial.print("Display loop, EOF marker:" + (String)current_file_position + " Char:" + ch + " " + char(ch) + " ");
+                                        //Serial.println(ch, DEC);
+                                    }
+                                    //Change the line to next
+                                    client.write("</td></tr>");
+                                    line++;
+                                    current_file_position = beginning_line_position; //Move cursor to the beginning of the line
+                                    beginning_line_position = beginning_line_position - 3;
+                                    if (logging.available())
+                                    {
+                                        ch = logging.read(); //Read the char, if the file is still available
+                                    }
+                                }
+                                client.println("</td></tr></table>");
+                                // close the file:
+                                logging.close();
+                            }
+                            else
+                            {
+                                // if the file didn't open, print an error:
+                                client.println("error opening params.txt");
+                            }
+//------------------------------------------------------------------------------------------
+                            /*client.println("<H5>Logi:</H5>");
+
+                            logging = SD.open("log.txt"); //open parametrs file
+
+                            if (logging)
+
+                            {
+
+                                Serial.println("Logs:");
+
+                                // read from the file until there's nothing else in it:
+
+                                int line = 0;
+
+                                char ch;
+
+                                //while (logging.available())
+
+                                while (line < 100)
+
+                                {
+
+                                    if (logging.available())
+
+                                        ch = logging.read();
+
+                                    switch ((int)ch)
+
+                                    {
+
+                                    case 13:
+
+                                        client.println("<br>");
+
+                                        line++;
+
+                                        break;
+
+                                    default:
+
+                                        client.write(ch);
+
+                                        break;
+
+                                    }
+
+                                }
+
+                                // close the file:
+
+                                logging.close();
+
+                            }
+
+                            else
+
+                            {
+
+                                // if the file didn't open, print an error:
+
+                                client.println("error opening logs.txt");
+
+                            }*/
+# 1403 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                            break;
+                        case 7: //Garden lights section
+                            if (gardenLightsAuto)
+                            {
+                                client.println((reinterpret_cast<const __FlashStringHelper *>(
+# 1407 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 1407 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              "<a href=\"/70/off\"><button class=\"button button2\">osw. ogrodu Auto</button></a>"
+# 1407 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              ); &__c[0];}))
+# 1407 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              )));
+                            }
+                            else
+                            {
+                                client.println((reinterpret_cast<const __FlashStringHelper *>(
+# 1411 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 1411 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              "<a href=\"/70/on\"><button class=\"button \">osw. ogrodu Reczne</button></a>"
+# 1411 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              ); &__c[0];}))
+# 1411 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              )));
+                            }
+                            if (gardenLights)
+                            {
+                                client.println((reinterpret_cast<const __FlashStringHelper *>(
+# 1415 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 1415 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              "<a href=\"/71/off\"><button class=\"button button2\">On</button></a>"
+# 1415 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              ); &__c[0];}))
+# 1415 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              )));
+                            }
+                            else
+                            {
+                                client.println((reinterpret_cast<const __FlashStringHelper *>(
+# 1419 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              (__extension__({static const char __c[] __attribute__((__progmem__)) = (
+# 1419 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              "<a href=\"/71/on\"><button class=\"button \">Off</button></a>"
+# 1419 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+                                              ); &__c[0];}))
+# 1419 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+                                              )));
+                            }
+
                             break;
                         }
                         //client.println(F("<a href=\"/63/on\"><button class=\"button button2\">Back to main page</button></a></p>"));
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1292 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1425 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1292 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1425 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "<a href=\"/nothing\"><button class=\"button button2\">Refresh </button></a></p>"
-# 1292 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1425 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 1292 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1425 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       )));
                         //-------------Koniec
                         client.println();
                         client.println((reinterpret_cast<const __FlashStringHelper *>(
-# 1295 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1428 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       (__extension__({static const char __c[] __attribute__((__progmem__)) = (
-# 1295 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1428 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       "</body></html>"
-# 1295 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
+# 1428 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino" 3
                                       ); &__c[0];}))
-# 1295 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+# 1428 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
                                       ))); //Nie wiem czemu, ale musialem zakomentowac, bo nie wyswietlal godziny :(
                         // The HTTP response ends with another blank line
                         client.println();
@@ -2361,40 +2552,13 @@ void loop()
         digitalWrite(29 /*Heating upstairs*/, 0x1);
     };
 
-    if (odliczanie.checkTimer(5)) //Blins up
-    {
-        digitalWrite(27 /*Blinds up*/, 0x0);
-    }
-    else
-    {
-        digitalWrite(27 /*Blinds up*/, 0x1);
-    };
-
-    if (odliczanie.checkTimer(4)) //Blinds down
-    {
-        digitalWrite(26 /*Blinss down*/, 0x0);
-    }
-    else
-    {
-        digitalWrite(26 /*Blinss down*/, 0x1);
-    };
-
-    if (odliczanie.checkTimer(3)) //Blinds stop
-    {
-        digitalWrite(24 /*Blinds stop*/, 0x0);
-    }
-    else
-    {
-        digitalWrite(24 /*Blinds stop*/, 0x1);
-    };
-
     if (gardenLights) //Check, if garden lights should be on
     {
-        digitalWrite(32 /*Garden lights output*/, 0x0);
+        digitalWrite(24 /*Garden lights output*/, 0x0);
     }
     else
     {
-        digitalWrite(32 /*Garden lights output*/, 0x1);
+        digitalWrite(24 /*Garden lights output*/, 0x1);
     }
 
     if (podlewanieCykl == 1) //Starting watering cycle
@@ -2420,12 +2584,12 @@ void loop()
     if ((trigger(1)) && (roletyAuto)) //Auto blins up if it is on
     {
         Serial.println("Rolety w gore by trigger");
-        odliczanie.startTimer(1500, 5); //Only 1500ms
+        rolety.blindsUp(0); //Rolety w gore
     };
     if ((trigger(2)) && (roletyAuto)) //Auto blins up if it is on
     {
         Serial.println("Rolety w dol by trigger");
-        odliczanie.startTimer(1500, 4); //Only 1500ms
+        rolety.blindsDown(0); //Rolety w dol
     };
 
     if (trigger(3) && (podlewanieAuto) && (!podlewanieRainSensor)) //Auto watering is inside the trigger, and we have no rain :)
@@ -2467,8 +2631,8 @@ void loop()
 
         if (!logging)
             Serial.println("Error opening param.txt"); //Write about opening errors, if any.
-        logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3);
-        Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3);
+        logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3 + ";" + (String)podlewanieRainSensor + ";" + (String)gardenLights);
+        Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3 + ";" + (String)podlewanieRainSensor + ";" + (String)gardenLights);
         logging.close();
     };
 }
@@ -2504,7 +2668,7 @@ boolean trigger(int number)
         else
         {
             if (zegar.getSecond() != 0)
-                lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
+                lockTrigger[number] = false; //Unlocking trigger becouse second not zero - could be start again
         }
 
         if ((roletyCurrentLightLevel == roletySetLightLevel) && (!odliczanie.checkTimer(15)) && (roletyLight)) //If it is dark
@@ -2573,4 +2737,23 @@ void sendNTPpacket(const char *address)
     Udp.beginPacket(address, 123); // NTP requests are to port 123
     Udp.write(packetBuffer, NTP_PACKET_SIZE);
     Udp.endPacket();
+}
+
+boolean logWrite(String info)
+{
+    Serial.println("Writing log info...");
+    logging = SD.open("log.txt", (O_READ | O_WRITE | O_CREAT | O_APPEND)); //Open log file in SD card
+    if (!logging)
+        Serial.println("Error opening param.txt"); //Write about opening errors, if any.
+    logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
+    Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
+    logging.close();
+    if (logging)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    };
 }

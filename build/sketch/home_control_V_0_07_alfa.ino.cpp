@@ -54,18 +54,18 @@
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.h>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\SRTC\RTC.cpp>
 
-#define pin_DL 23           //droping line
-#define pin_Z1 22           //Z1 watering circut
-#define pin_Z2 25           //Z2 watering circut
-#define pin_BS 24           //Blinds stop
-#define pin_BU 27           //Blinds up
-#define pin_BD 26           //Blinss down
+#define pin_DL 23 //droping line
+#define pin_Z1 22 //Z1 watering circut
+#define pin_Z2 25 //Z2 watering circut
+//#define pin_BS 24           //Blinds stop - turn off - blinds now using RF
+//#define pin_BU 27           //Blinds up - turn off - blinds now using RF
+//#define pin_BD 26           //Blinss down - turn off - blinds now using RF
 #define pin_TS 31           //Dallas temperature sensors
 #define pin_HU 29           //Heating upstairs
 #define pin_HD 28           //Heating downstairs
 #define pin_RS 30           //Rain sensor input
 #define pin_LightSensor 0   //Light sensor for blinds analog input
-#define pin_gardenLights 32 //Garden lights output
+#define pin_gardenLights 24 //Garden lights output
 
 boolean lockTrigger[5]; //Locking trigger to start it only onec.
 
@@ -104,11 +104,12 @@ Blinds rolety;
 // Auxiliar variables to store the current output state
 boolean roletyAuto = true;
 
-boolean roletyLight = true;        //Turn on blinds down by light
+boolean roletyLight = false;       //Turn on blinds down by light
 int roletySetLightLevel = 600;     //Set light level
 int roletyCurrentLightLevel = 600; //Set light level
 
 boolean gardenLights = false;    //Garden lights variable
+boolean gardenLightsAuto = true; //Auto on for gardern lights
 byte gardenLightsOffHour = 2;    //Hour to off gardenLights
 byte gardenLightsOffMinute = 10; //Minutes to off gardenLights
 
@@ -198,19 +199,17 @@ EthernetServer server(80);
 boolean trigger(byte);
 void sendNTPpacket(const char *address);
 
-File logging;
-File blinds;
-File watering;
-File heating;
-File parameters;
+File logging; //write log to SD card
 
-#line 205 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 202 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup();
-#line 388 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 390 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 1479 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1585 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 205 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1687 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+boolean logWrite(String info);
+#line 202 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
 {
 
@@ -219,9 +218,9 @@ void setup()
     pinMode(pin_DL, OUTPUT);
     pinMode(pin_Z1, OUTPUT);
     pinMode(pin_Z2, OUTPUT);
-    pinMode(pin_BU, OUTPUT);
-    pinMode(pin_BD, OUTPUT);
-    pinMode(pin_BS, OUTPUT);
+    //pinMode(pin_BU, OUTPUT); // - turn off - blinds now using RF
+    //pinMode(pin_BD, OUTPUT); // - turn off - blinds now using RF
+    //pinMode(pin_BS, OUTPUT); // - turn off - blinds now using RF
     pinMode(pin_HU, OUTPUT);
     pinMode(pin_HD, OUTPUT);
     pinMode(pin_RS, INPUT);
@@ -231,9 +230,9 @@ void setup()
     digitalWrite(pin_DL, HIGH);
     digitalWrite(pin_Z1, HIGH);
     digitalWrite(pin_Z2, HIGH);
-    digitalWrite(pin_BU, HIGH);
-    digitalWrite(pin_BD, HIGH);
-    digitalWrite(pin_BS, HIGH);
+    //digitalWrite(pin_BU, HIGH); // - turn off - blinds now using RF
+    //digitalWrite(pin_BD, HIGH); // - turn off - blinds now using RF
+    //digitalWrite(pin_BS, HIGH); // - turn off - blinds now using RF
     digitalWrite(pin_HU, HIGH);
     digitalWrite(pin_HD, HIGH);
     digitalWrite(pin_gardenLights, HIGH);
@@ -255,13 +254,13 @@ void setup()
     if (!logging)
         Serial.println("Error opening log.txt"); //Write about opening errors, if any.
 
-    logging.println("Starting...");
+    logWrite("Starting...");
 
     for (int i = 0; i < 5; i++)
         lockTrigger[i] = false;
 
     Serial.println("Initializing Dallas temperature sensors...");
-    logging.println("Initializing Dallas temperature sensors...");
+    logWrite("Initializing Dallas temperature sensors...");
 
     //Dallas temperature sensors:
     sensors.begin(12); //resolution 12
@@ -269,7 +268,7 @@ void setup()
     // Open serial communications and wait for port to open:
 
     Serial.println("Initializing timelord SunRise and SunSet library...");
-    logging.println("Initializing timelord SunRise and SunSet library...");
+    logWrite("Initializing timelord SunRise and SunSet library...");
 
     tardis.TimeZone(1 * 60); // tell TimeLord what timezone your RTC is synchronized to. You can ignore DST
     // as long as the RTC never changes back and forth between DST and non-DST
@@ -284,30 +283,31 @@ void setup()
     }
 
     Serial.println("Initializing Ethernet connection...");
-    logging.println("Initializing Ethernet connection...");
+    logWrite("Initializing Ethernet connection...");
     //start the Ethernet connection and the server :
     Ethernet.begin(mac, ip, dns, gateway, subnet);
 
     // Check for Ethernet hardware present
     if (Ethernet.hardwareStatus() == EthernetNoHardware)
     {
-        logging.println("No ethernet expansion shield");
+        Serial.println("No ethernet expansion shield");
+        logWrite("No ethernet expansion shield");
     }
     if (Ethernet.linkStatus() == LinkOFF)
     {
         Serial.println("Ethernet cable is not connected.");
-        logging.println("Ethernet cable is not connected.");
+        logWrite("Ethernet cable is not connected.");
     }
 
     Udp.begin(localPort); //Start UDP
-    logging.print("IP:");
-    logging.println(Ethernet.localIP());
-    logging.print(" DNS server ip: ");
-    logging.println(Ethernet.dnsServerIP());
-    logging.println(" Gateway ip: ");
-    logging.print(Ethernet.gatewayIP());
-    logging.println(" Subnet mask:");
-    logging.println(Ethernet.subnetMask());
+    logWrite("IP:");
+    logWrite((String)Ethernet.localIP());
+    logWrite(" DNS server ip: ");
+    logWrite((String)Ethernet.dnsServerIP());
+    logWrite(" Gateway ip: ");
+    logWrite((String)Ethernet.gatewayIP());
+    logWrite(" Subnet mask:");
+    logWrite((String)Ethernet.subnetMask());
 
     Serial.print("IP:");
     Serial.println(Ethernet.localIP());
@@ -318,7 +318,7 @@ void setup()
     Serial.print(" Subnet mask:");
     Serial.println(Ethernet.subnetMask());
 
-    logging.println("Getting the current Date and Time from NTP server...");
+    logWrite("Getting the current Date and Time from NTP server...");
     Serial.println("Getting the current Date and Time from NTP server...");
     sendNTPpacket(timeServer);       // send an NTP packet to a time server
     odliczanie.startTimer(60000, 0); // timer 60s for timeout of NTP receive packet
@@ -328,7 +328,7 @@ void setup()
         if (!odliczanie.checkTimer(0))
         {
             Serial.println("NTP timeout. Setting default time.");
-            logging.println("NTP timeout. Setting default time.");
+            logWrite("NTP timeout. Setting default time.");
             epoch = 1590183595; //a time to set anything
             break;
         }
@@ -342,6 +342,7 @@ void setup()
     unsigned long secsSince1900 = highWord << 16 | lowWord;
     // now convert NTP time into everyday time:
     Serial.print("Unix time = ");
+    logWrite("Unix time = ");
     // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
     const unsigned long seventyYears = 2208988800UL;
     // subtract seventy years:
@@ -349,9 +350,10 @@ void setup()
         epoch = secsSince1900 - seventyYears; //if no timeout on getting NTP info
     // print Unix time:
     Serial.println(epoch);
+    logWrite((String)epoch);
     time_t utcCalc = epoch;
     Serial.println("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
-    logging.println("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
+    logWrite("UTC Date: " + (String)year(utcCalc) + "-" + odliczanie.leadingZero(month(utcCalc)) + "-" + odliczanie.leadingZero(day(utcCalc)) + " " + odliczanie.leadingZero(hour(utcCalc)) + ":" + odliczanie.leadingZero(minute(utcCalc)));
 
     zegar.setYear((int)year(utcCalc));
     zegar.setMonth((byte)(month(utcCalc)));
@@ -385,7 +387,9 @@ void setup()
     // start the server
     server.begin();
     Serial.print("server is at ");
+    logWrite("server is at ");
     Serial.println(Ethernet.localIP());
+    logWrite((String)Ethernet.localIP());
     odliczanie.startTimer(20, 1);
     slonce.checkSun(zegar.getSecond(), zegar.getMinute(), zegar.getHour(), zegar.getMonthDay(), zegar.getMonth(), (byte)(zegar.getYear() - 2000), 1);
     logging.close(); //Close logging file
@@ -429,6 +433,42 @@ void loop()
                         //client.println("Refresh: 5");  // refresh the page automatically every 5 sec
                         client.println();
 
+                        if (header.indexOf("GET /71/off") >= 0) //Garder lighs off
+                        {
+
+                            gardenLights = false;
+                        };
+
+                        if (header.indexOf("GET /71/on") >= 0) //Garder lighs on
+                        {
+
+                            gardenLights = true;
+                        };
+
+                        if (header.indexOf("GET /70/off") >= 0) //Auto garden lights off
+                        {
+
+                            gardenLightsAuto = false;
+                        };
+
+                        if (header.indexOf("GET /70/on") >= 0) //Auto garder lights on
+                        {
+
+                            gardenLightsAuto = true;
+                        };
+
+                        if (header.indexOf("GET /69/on") >= 0) //Show garden lights
+                        {
+
+                            podstrona = 7; //Set content parameter to 6 - show garden lights settings
+                        };
+
+                        if (header.indexOf("GET /68/on") >= 0) //Show log page
+                        {
+
+                            podstrona = 6; //Set content parameter to 6 - show log page
+                        };
+
                         if (header.indexOf("GET /67/on") >= 0) //Show heating page
                         {
                             podstrona = 4; //Set content parameter to 4 - heating
@@ -454,9 +494,9 @@ void loop()
                             podstrona = 0; //Set content variable to 0 - main page
                         };
 
-                        if (header.indexOf("GET /62/on") >= 0) //Rolety lazienka gora stop
+                        if (header.indexOf("GET /62/on") >= 0) //Show parameters page
                         {
-                            podstrona = 5; //Rolety lazienka gora stop
+                            podstrona = 5; //Show parameters page
                         };
 
                         if (header.indexOf("GET /61/on") >= 0) //Rolety lazienka gora stop
@@ -795,19 +835,14 @@ void loop()
                         {
                             Serial.println("Rolety w gore");
                             rolety.blindsUp(0);
-                            odliczanie.startTimer(1500, 5); //Only 700ms
+                            //odliczanie.startTimer(1500, 5); //Only 700ms  - turn off - blinds now using RF
                         };
-                        /*if (header.indexOf("GET /5/off") >= 0)
-                        // {
-                            //Serial.println("Rolety w gore zatrzymane");
-                            podniesRolety = "off";
-                            digitalWrite(pin_BU, HIGH);
-                        };*/
+
                         if (header.indexOf("GET /4/on") >= 0) //Blinds down
                         {
                             Serial.println("Rolety w dol");
                             rolety.blindsDown(0);
-                            odliczanie.startTimer(1500, 4); //Only 700ms
+                            //odliczanie.startTimer(1500, 4); //Only 700ms  - turn off - blinds now using RF
                         };
                         //if (header.indexOf("GET /4/off") >= 0)
                         //{
@@ -818,25 +853,20 @@ void loop()
                         {
                             Serial.println("Rolety w stop");
                             rolety.blindsStop(0);
-                            odliczanie.startTimer(1500, 3); //Only 700ms
+                            //odliczanie.startTimer(1500, 3); //Only 700ms  - turn off - blinds now using RF
                         };
-                        /*if (header.indexOf("GET /3/off") >= 0)
-                        {
-                            //Serial.println("Rolety stop zatrzymane");
-                            zatrzymajRolety = "off";
-                            digitalWrite(pin_BS, HIGH);
-                        };*/
+
                         if (header.indexOf("GET /2/on") >= 0) //Blins auto up and down by SunRise and SunSet
                         {
                             //Serial.println("Auto");
                             roletyAuto = true;
-                            //digitalWrite(pin_BS, LOW);
+                            //digitalWrite(pin_BS, LOW);  - turn off - blinds now using RF
                         };
                         if (header.indexOf("GET /2/off") >= 0) //Blins auto off
                         {
                             //Serial.println("Manual");
                             roletyAuto = false;
-                            //digitalWrite(pin_BS, HIGH);
+                            //digitalWrite(pin_BS, HIGH); - turn off - blinds now using RF
                         };
 
                         if (header.indexOf("GET /zegar/") >= 0)
@@ -881,7 +911,7 @@ void loop()
                         client.println(F("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}"));
                         client.println(F(".button2 {background-color: #77878A;}table, th, td {  border: 1px solid black;margin-left:auto;margin-right:auto;}</style></head>"));
                         // Web Page Heading
-                        client.println(F("<body><H1>Home Control Domek Ozarow V0.07A</H1>"));
+                        client.println(F("<body><H1>Home Control Ozarow V0.07B</H1>"));
                         client.println(F("<h5> Dzis jest: "));
                         client.println(zegar.getDate());
                         client.println(F(" "));
@@ -904,9 +934,11 @@ void loop()
                         case 0: //main page
                             client.println(F("<p><a href=\"/64/on\"><button class=\"button button\">Rolety</button></a>"));
                             client.println(F("<a href=\"/65/on\"><button class=\"button button\">Timery rolet</button></a>"));
+                            client.println(F("<a href=\"/69/on\"><button class=\"button button\">Oswietlenie ogrodu</button></a>"));
                             client.println(F("<a href=\"/66/on\"><button class=\"button button\">Podlewanie</button></a>"));
                             client.println(F("<a href=\"/67/on\"><button class=\"button button\">Ogrzewanie</button></a>"));
-                            client.println(F("<a href=\"/62/on\"><button class=\"button button\">Odczyt parametrow</button></a></p>"));
+                            client.println(F("<a href=\"/62/on\"><button class=\"button button\">Odczyt parametrow</button></a>"));
+                            client.println(F("<a href=\"/68/on\"><button class=\"button button\">Logi</button></a></p>"));
                             break;
                         case 1:
                             client.println(F("<H3>Rolety</H3>"));
@@ -1175,38 +1207,6 @@ void loop()
 
                             break;
                         case 5: //Show parameters sub-page
-                            client.println("<H5>Logi:</H5>");
-                            /*logging = SD.open("log.txt"); //open parametrs file
-                            if (logging)
-                            {
-                                Serial.println("Logs:");
-                                // read from the file until there's nothing else in it:
-                                int line = 0;
-                                char ch;
-                                //while (logging.available())
-                                while (line < 50)
-                                {
-                                    if (logging.available())
-                                        ch = logging.read();
-                                    switch ((int)ch)
-                                    {
-                                    case 13:
-                                        client.println("<br>");
-                                        line++;
-                                        break;
-                                    default:
-                                        client.write(ch);
-                                        break;
-                                    }
-                                }
-                                // close the file:
-                                logging.close();
-                            }
-                            else
-                            {
-                                // if the file didn't open, print an error:
-                                client.println("error opening params.txt");
-                            }*/
                             client.println("<H5>Parametry:</H5>");
                             logging = SD.open("params.txt"); //open parametrs file
                             if (logging)
@@ -1214,12 +1214,11 @@ void loop()
                                 Serial.println("Parameters:");
                                 client.println(F("<table style="
                                                  "background-color:#FFFFFF"
-                                                 "><tr><th>No.</th><th>Data</th><th>Godzina</th><th>Osw.</th><th>Temp1</th><th>Temp2</th><th>Temp3</th></tr>"));
+                                                 "><tr><th>No.</th><th>Data</th><th>Godzina</th><th>Osw.</th><th>Temp1</th><th>Temp2</th><th>Temp3</th><th>Deszcz</th><th>Osw. ogr.</th></tr>"));
                                 // read from the file until there's nothing else in it:
                                 unsigned long end_file_position = 0;       //Position in File
                                 unsigned long current_file_position = 0;   //Position in File
                                 unsigned long beginning_line_position = 0; //Position in File
-                                unsigned long current_line_position = 0;   //Position in File
 
                                 int line = 1; //Row counts in table
                                 char ch = 0;  //Char to show
@@ -1227,8 +1226,7 @@ void loop()
                                     logging.read();                            //Go to the end of file
                                 end_file_position = logging.position();        //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
-                                //client.println("<tr><td>" + (String)line + "</td><td>");
-                                while (line <= 50) //Show only 50 lines
+                                while (line <= 101)                            //Show only 100 lines
                                 {
                                     client.println("<tr><td>" + (String)line + "</td><td>");
                                     //Find the beginning of the line (of beginning of file):
@@ -1242,13 +1240,12 @@ void loop()
                                         }
                                         else
                                             break;
-
                                     }
-                                    beginning_line_position = current_file_position; //Remeber the line beginning position
-                                    current_file_position =current_file_position+ 2; //Go to the next char (current is 13, missing the next loop, another is 10)
+                                    beginning_line_position = current_file_position;   //Remeber the line beginning position
+                                    current_file_position = current_file_position + 2; //Go to the next char (current is 13, missing the next loop, another is 10)
                                     logging.seek(current_file_position);
                                     if (logging.available())
-                                        ch=logging.read(); //Move to next char - not chr13 :)
+                                        ch = logging.read(); //Move to next char - not chr13 :)
                                     //Read the line from beginning to the end of line or end of file:
                                     //Serial.print("Move 3 forward:" + (String)current_file_position + " Char:" + ch + " ");
                                     //Serial.println(ch, DEC);
@@ -1294,7 +1291,145 @@ void loop()
                                 // if the file didn't open, print an error:
                                 client.println("error opening params.txt");
                             }
-                            client.println("<H5>");
+                            break;
+                        case 6:
+                            //show log:
+
+                            logging = SD.open("logs.txt"); //open parametrs file
+                            if (logging)
+                            {
+                                Serial.println("Parameters:");
+                                client.println(F("<table style="
+                                                 "background-color:#FFFFFF"
+                                                 "><tr><th>No.</th><th>Data</th><th>Godzina</th><th>Info</th></tr>"));
+                                // read from the file until there's nothing else in it:
+                                unsigned long end_file_position = 0;       //Position in File
+                                unsigned long current_file_position = 0;   //Position in File
+                                unsigned long beginning_line_position = 0; //Position in File
+
+                                int line = 1; //Row counts in table
+                                char ch = 0;  //Char to show
+                                while (logging.available())
+                                    logging.read();                            //Go to the end of file
+                                end_file_position = logging.position();        //Remember the last position
+                                current_file_position = end_file_position - 2; //Set the current position to the end of file
+                                while (line <= 101)                            //Show only 100 lines
+                                {
+                                    client.println("<tr><td>" + (String)line + "</td><td>");
+                                    //Find the beginning of the line (of beginning of file):
+                                    while (((int)ch != 13))
+                                    {
+                                        current_file_position--;             //move back to the file by two positions
+                                        logging.seek(current_file_position); //Move to current position
+                                        if (logging.available())
+                                        {
+                                            ch = logging.read(); //Read the char, if the file is still available
+                                        }
+                                        else
+                                            break;
+                                    }
+                                    beginning_line_position = current_file_position;   //Remeber the line beginning position
+                                    current_file_position = current_file_position + 2; //Go to the next char (current is 13, missing the next loop, another is 10)
+                                    logging.seek(current_file_position);
+                                    if (logging.available())
+                                        ch = logging.read(); //Move to next char - not chr13 :)
+                                    //Read the line from beginning to the end of line or end of file:
+                                    //Serial.print("Move 3 forward:" + (String)current_file_position + " Char:" + ch + " ");
+                                    //Serial.println(ch, DEC);
+                                    while ((int)ch != 13) //if we have the beginning of the line
+                                    {
+                                        if (logging.available())
+                                        {
+                                            ch = logging.read(); //Read the char, if the file is still available
+                                        }
+                                        else
+                                            break;
+                                        switch ((int)ch)
+                                        {
+                                        case 59:
+                                            client.write("</td><td>");
+                                            break;
+                                        default:
+                                            client.write(ch);
+                                            break;
+                                        }
+                                        logging.seek(current_file_position);
+
+                                        current_file_position++; //Go to the next char, till found 13 - loop break
+                                        //Serial.print("Display loop, EOF marker:" + (String)current_file_position + " Char:" + ch + " " + char(ch) + " ");
+                                        //Serial.println(ch, DEC);
+                                    }
+                                    //Change the line to next
+                                    client.write("</td></tr>");
+                                    line++;
+                                    current_file_position = beginning_line_position; //Move cursor to the beginning of the line
+                                    beginning_line_position = beginning_line_position - 3;
+                                    if (logging.available())
+                                    {
+                                        ch = logging.read(); //Read the char, if the file is still available
+                                    }
+                                }
+                                client.println("</td></tr></table>");
+                                // close the file:
+                                logging.close();
+                            }
+                            else
+                            {
+                                // if the file didn't open, print an error:
+                                client.println("error opening params.txt");
+                            }
+//------------------------------------------------------------------------------------------
+                            /*client.println("<H5>Logi:</H5>");
+                            logging = SD.open("log.txt"); //open parametrs file
+                            if (logging)
+                            {
+                                Serial.println("Logs:");
+                                // read from the file until there's nothing else in it:
+                                int line = 0;
+                                char ch;
+                                //while (logging.available())
+                                while (line < 100)
+                                {
+                                    if (logging.available())
+                                        ch = logging.read();
+                                    switch ((int)ch)
+                                    {
+                                    case 13:
+                                        client.println("<br>");
+                                        line++;
+                                        break;
+                                    default:
+                                        client.write(ch);
+                                        break;
+                                    }
+                                }
+                                // close the file:
+                                logging.close();
+                            }
+                            else
+                            {
+                                // if the file didn't open, print an error:
+                                client.println("error opening logs.txt");
+                            }*/
+                            break;
+                        case 7: //Garden lights section
+                            if (gardenLightsAuto)
+                            {
+                                client.println(F("<a href=\"/70/off\"><button class=\"button button2\">osw. ogrodu Auto</button></a>"));
+                            }
+                            else
+                            {
+                                client.println(F("<a href=\"/70/on\"><button class=\"button \">osw. ogrodu Reczne</button></a>"));
+                            }
+                            if (gardenLights)
+                            {
+                                client.println(F("<a href=\"/71/off\"><button class=\"button button2\">On</button></a>"));
+                            }
+                            else
+                            {
+                                client.println(F("<a href=\"/71/on\"><button class=\"button \">Off</button></a>"));
+                            }
+
                             break;
                         }
                         //client.println(F("<a href=\"/63/on\"><button class=\"button button2\">Back to main page</button></a></p>"));
@@ -1373,33 +1508,6 @@ void loop()
         digitalWrite(pin_HU, HIGH);
     };
 
-    if (odliczanie.checkTimer(5)) //Blins up
-    {
-        digitalWrite(pin_BU, LOW);
-    }
-    else
-    {
-        digitalWrite(pin_BU, HIGH);
-    };
-
-    if (odliczanie.checkTimer(4)) //Blinds down
-    {
-        digitalWrite(pin_BD, LOW);
-    }
-    else
-    {
-        digitalWrite(pin_BD, HIGH);
-    };
-
-    if (odliczanie.checkTimer(3)) //Blinds stop
-    {
-        digitalWrite(pin_BS, LOW);
-    }
-    else
-    {
-        digitalWrite(pin_BS, HIGH);
-    };
-
     if (gardenLights) //Check, if garden lights should be on
     {
         digitalWrite(pin_gardenLights, LOW);
@@ -1432,12 +1540,12 @@ void loop()
     if ((trigger(1)) && (roletyAuto)) //Auto blins up if it is on
     {
         Serial.println("Rolety w gore by trigger");
-        odliczanie.startTimer(1500, 5); //Only 1500ms
+        rolety.blindsUp(0); //Rolety w gore
     };
     if ((trigger(2)) && (roletyAuto)) //Auto blins up if it is on
     {
         Serial.println("Rolety w dol by trigger");
-        odliczanie.startTimer(1500, 4); //Only 1500ms
+        rolety.blindsDown(0); //Rolety w dol
     };
 
     if (trigger(3) && (podlewanieAuto) && (!podlewanieRainSensor)) //Auto watering is inside the trigger, and we have no rain :)
@@ -1479,8 +1587,8 @@ void loop()
 
         if (!logging)
             Serial.println("Error opening param.txt"); //Write about opening errors, if any.
-        logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3);
-        Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3);
+        logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3 + ";" + (String)podlewanieRainSensor + ";" + (String)gardenLights);
+        Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + (String)roletyCurrentLightLevel + ";" + (String)temperature1 + ";" + (String)temperature2 + ";" + (String)temperature3 + ";" + (String)podlewanieRainSensor + ";" + (String)gardenLights);
         logging.close();
     };
 }
@@ -1516,7 +1624,7 @@ boolean trigger(int number)
         else
         {
             if (zegar.getSecond() != 0)
-                lockTrigger[number] = false; //Unocking trigger becouse second not zero - could be start again
+                lockTrigger[number] = false; //Unlocking trigger becouse second not zero - could be start again
         }
 
         if ((roletyCurrentLightLevel == roletySetLightLevel) && (!odliczanie.checkTimer(15)) && (roletyLight)) //If it is dark
@@ -1585,4 +1693,23 @@ void sendNTPpacket(const char *address)
     Udp.beginPacket(address, 123); // NTP requests are to port 123
     Udp.write(packetBuffer, NTP_PACKET_SIZE);
     Udp.endPacket();
+}
+
+boolean logWrite(String info)
+{
+    Serial.println("Writing log info...");
+    logging = SD.open("log.txt", FILE_WRITE); //Open log file in SD card
+    if (!logging)
+        Serial.println("Error opening param.txt"); //Write about opening errors, if any.
+    logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
+    Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
+    logging.close();
+    if (logging)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    };
 }
