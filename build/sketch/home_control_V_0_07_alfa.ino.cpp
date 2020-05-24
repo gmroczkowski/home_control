@@ -95,6 +95,8 @@ DS18B20 sensors(&onewire); //Dallas temperature sensors
 
 unsigned long uptime; //uptime :)
 
+int line_to_show=100;           //How much line should be shown in parameters of logs
+
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Blinds\Blinds.cpp>
 
@@ -201,15 +203,15 @@ void sendNTPpacket(const char *address);
 
 File logging; //write log to SD card
 
-#line 202 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup();
-#line 390 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 387 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 1585 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1666 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 1687 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1768 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean logWrite(String info);
-#line 202 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
 {
 
@@ -248,11 +250,6 @@ void setup()
     }
     else
         Serial.println("initialization done.");
-
-    logging = SD.open("log.txt", FILE_WRITE); //Open log file in SD card
-
-    if (!logging)
-        Serial.println("Error opening log.txt"); //Write about opening errors, if any.
 
     logWrite("Starting...");
 
@@ -435,400 +432,472 @@ void loop()
 
                         if (header.indexOf("GET /71/off") >= 0) //Garder lighs off
                         {
-
                             gardenLights = false;
+                            logWrite("Garder lighs off");
                         };
 
                         if (header.indexOf("GET /71/on") >= 0) //Garder lighs on
                         {
-
                             gardenLights = true;
+                            logWrite("Garder lighs on");
                         };
 
                         if (header.indexOf("GET /70/off") >= 0) //Auto garden lights off
                         {
-
                             gardenLightsAuto = false;
+                            logWrite("Auto garden lights off");
                         };
 
                         if (header.indexOf("GET /70/on") >= 0) //Auto garder lights on
                         {
-
                             gardenLightsAuto = true;
+                            logWrite("Auto garder lights on");
                         };
 
                         if (header.indexOf("GET /69/on") >= 0) //Show garden lights
                         {
-
                             podstrona = 7; //Set content parameter to 6 - show garden lights settings
+                            logWrite("Show garden lights");
                         };
 
                         if (header.indexOf("GET /68/on") >= 0) //Show log page
                         {
-
                             podstrona = 6; //Set content parameter to 6 - show log page
+                            logWrite("Show log page");
                         };
 
                         if (header.indexOf("GET /67/on") >= 0) //Show heating page
                         {
                             podstrona = 4; //Set content parameter to 4 - heating
+                            logWrite("Show heating page");
                         };
 
                         if (header.indexOf("GET /66/on") >= 0) //Show watering page
                         {
                             podstrona = 3; //Set content parameter to 3 - watering
+                            logWrite("Show watering page");
                         };
 
                         if (header.indexOf("GET /65/on") >= 0) //Show blinds page
                         {
                             podstrona = 2; //Set content parameter to 2 - blinds settings
+                            logWrite("Show blinds page");
                         };
 
                         if (header.indexOf("GET /64/on") >= 0) //Show blinds page
                         {
                             podstrona = 1; //Set content parameter to 1 - blinds
+                            logWrite("Show blinds page");
                         };
 
                         if (header.indexOf("GET /63/on") >= 0) //Show main page
                         {
                             podstrona = 0; //Set content variable to 0 - main page
+                            logWrite("Show main page");
                         };
 
                         if (header.indexOf("GET /62/on") >= 0) //Show parameters page
                         {
                             podstrona = 5; //Show parameters page
+                            logWrite("Show parameters page");
                         };
 
                         if (header.indexOf("GET /61/on") >= 0) //Rolety lazienka gora stop
                         {
                             rolety.blindsStop(15); //Rolety lazienka gora stop
+                            logWrite("Rolety lazienka gora stop");
                         };
 
                         if (header.indexOf("GET /60/on") >= 0) //Rolety lazienka gora up
                         {
                             rolety.blindsDown(15); //Rolety lazienka gora up
+                            logWrite("Rolety lazienka gora up");
                         };
 
                         if (header.indexOf("GET /59/on") >= 0) //Rolety lazienka gora down
                         {
                             rolety.blindsUp(15); //Rolety lazienka gora down
+                            logWrite("Rolety lazienka gora down");
                         };
 
                         if (header.indexOf("GET /58/on") >= 0) //Rolety lazienka gora stop
                         {
                             rolety.blindsStop(14); //Rolety lazienka gora stop
+                            logWrite("Rolety lazienka gora stop");
                         };
 
                         if (header.indexOf("GET /57/on") >= 0) //Rolety lazienka gora up
                         {
                             rolety.blindsDown(14); //Rolety lazienka gora up
+                            logWrite("Rolety lazienka gora up");
                         };
 
                         if (header.indexOf("GET /56/on") >= 0) //Rolety lazienka gora down
                         {
                             rolety.blindsUp(14); //Rolety lazienka gora down
+                            logWrite("Rolety lazienka gora down");
                         };
 
                         if (header.indexOf("GET /55/on") >= 0) //Rolety lazienka gora stop
                         {
                             rolety.blindsStop(13); //Rolety lazienka gora stop
+                            logWrite("Rolety lazienka gora stop");
                         };
 
                         if (header.indexOf("GET /54/on") >= 0) //Rolety lazienka gora up
                         {
                             rolety.blindsDown(13); //Rolety lazienka gora up
+                            logWrite("Rolety lazienka gora up");
                         };
 
                         if (header.indexOf("GET /53/on") >= 0) //Rolety lazienka gora down
                         {
                             rolety.blindsUp(13); //Rolety lazienka gora down
+                            logWrite("Rolety lazienka gora down");
                         };
 
                         if (header.indexOf("GET /52/on") >= 0) //Rolety kuchnia stop
                         {
                             rolety.blindsStop(12); //Rolety kuchnia stop
+                            logWrite("Rolety kuchnia stop");
                         };
 
                         if (header.indexOf("GET /51/on") >= 0) //Rolety kuchnia up
                         {
                             rolety.blindsDown(12); //Rolety kuchnia up
+                            logWrite("Rolety kuchnia up");
                         };
 
                         if (header.indexOf("GET /50/on") >= 0) //Rolety kuchnia down
                         {
                             rolety.blindsUp(12); //Rolety kuchnia down
+                            logWrite("Rolety kuchnia down");
                         };
 
                         if (header.indexOf("GET /49/on") >= 0) //Rolety Mikolaj stop
                         {
                             rolety.blindsStop(11); //Rolety Mikolaj stop
+                            logWrite("Rolety Mikolaj stop");
                         };
 
                         if (header.indexOf("GET /48/on") >= 0) //Rolety Mikolaj up
                         {
                             rolety.blindsDown(11); //Rolety Mikolaj up
+                            logWrite("Rolety Mikolaj up");
                         };
 
                         if (header.indexOf("GET /47/on") >= 0) //Rolety Mikolaj down
                         {
                             rolety.blindsUp(11); //Rolety Mikolaj down
+                            logWrite("Rolety Mikolaj down");
                         };
 
                         if (header.indexOf("GET /46/on") >= 0) //Rolety salon taras male stop
                         {
                             rolety.blindsStop(10); //Rolety salon taras male stop
+                            logWrite("Rolety salon taras male stop");
                         };
 
                         if (header.indexOf("GET /45/on") >= 0) //Rolety salon taras male up
                         {
                             rolety.blindsDown(10); //Rolety salon taras male up
+                            logWrite("Rolety salon taras male up");
                         };
 
                         if (header.indexOf("GET /44/on") >= 0) //Rolety salon taras male down
                         {
                             rolety.blindsUp(10); //Rolety salon taras male down
+                            logWrite("Rolety salon taras male down");
                         };
 
                         if (header.indexOf("GET /43/on") >= 0) //Rolety pracownia balkon stop
                         {
                             rolety.blindsStop(9); //Rolety pracownia balkon stop
+                            logWrite("Rolety pracownia balkon stop");
                         };
 
                         if (header.indexOf("GET /42/on") >= 0) //Rolety pracownia balkon up
                         {
                             rolety.blindsDown(9); //Rolety pracownia balkon up
+                            logWrite("Rolety pracownia balkon up");
                         };
 
                         if (header.indexOf("GET /41/on") >= 0) //Rolety pracownia balkon down
                         {
                             rolety.blindsUp(9); //Rolety pracownia balkon down
+                            logWrite("Rolety pracownia balkon down");
                         };
 
                         if (header.indexOf("GET /40/on") >= 0) //Rolety lazienka dol, wiatrolap stop
                         {
                             rolety.blindsStop(8); //Rolety lazienka dol, wiatrolap stop
+                            logWrite("Rolety lazienka dol, wiatrolap stop");
                         };
 
                         if (header.indexOf("GET /39/on") >= 0) //Rolety lazienka dol, wiatrolap up
                         {
                             rolety.blindsDown(8); //Rolety lazienka dol, wiatrolap up
+                            logWrite("Rolety lazienka dol, wiatrolap up");
                         };
 
                         if (header.indexOf("GET /38/on") >= 0) //Rolety lazienka dol, wiatrolap down
                         {
                             rolety.blindsUp(8); //Rolety lazienka dol, wiatrolap down
+                            logWrite("Rolety lazienka dol, wiatrolap down");
                         };
 
                         if (header.indexOf("GET /37/on") >= 0) //Rolety ? stop
                         {
                             rolety.blindsStop(7); //Rolety ? stop
+                            logWrite("Rolety ? up");
                         };
 
                         if (header.indexOf("GET /36/on") >= 0) //Rolety ? up
                         {
                             rolety.blindsDown(7); //Rolety ? up
+                            logWrite("Rolety ? up");
                         };
 
                         if (header.indexOf("GET /35/on") >= 0) //Rolety ? down
                         {
                             rolety.blindsUp(7); //Rolety ? down
+                            logWrite("Rolety ? down");
                         };
 
                         if (header.indexOf("GET /34/on") >= 0) //Rolety salon taras wyjscie stop
                         {
                             rolety.blindsStop(6); //Rolety salon taras wyjscie stop
+                            logWrite("Rolety salon taras wyjscie stop");
                         };
 
                         if (header.indexOf("GET /33/on") >= 0) //Rolety salon taras wyjscie up
                         {
                             rolety.blindsDown(6); //Rolety salon taras wyjscie up
+                            logWrite("Rolety salon taras wyjscie up");
                         };
 
                         if (header.indexOf("GET /32/on") >= 0) //Rolety salon taras wyjscie down
                         {
                             rolety.blindsUp(6); //Rolety salon taras wyjscie down
+                            logWrite("Rolety salon taras wyjscie down");
                         };
 
                         if (header.indexOf("GET /31/on") >= 0) //Rolety pracownia male okno stop
                         {
                             rolety.blindsStop(5); //Rolety pracownia male okno stop
+                            logWrite("Rolety pracownia male okno stop");
                         };
 
                         if (header.indexOf("GET /30/on") >= 0) //Rolety pracownia male okno up
                         {
                             rolety.blindsDown(5); //Rolety pracownia male okno up
+                            logWrite("Rolety pracownia male okno up");
                         };
 
                         if (header.indexOf("GET /29/on") >= 0) //Rolety pracownia male okno down
                         {
                             rolety.blindsUp(5); //Rolety pracownia male okno down
+                            logWrite("Rolety pracownia male okno down");
                         };
 
                         if (header.indexOf("GET /28/on") >= 0) //Rolety ? stop
                         {
                             rolety.blindsStop(4); //Rolety ? stop
+                            logWrite("Rolety ? stop");
                         };
 
                         if (header.indexOf("GET /27/on") >= 0) //Rolety ? up
                         {
                             rolety.blindsDown(4); //Rolety ? up
+                            logWrite("Rolety ? up");
                         };
 
                         if (header.indexOf("GET /26/on") >= 0) //Rolety ? down
                         {
                             rolety.blindsUp(4); //Rolety ? down
+                            logWrite("Rolety ? down");
                         };
 
                         if (header.indexOf("GET /25/on") >= 0) //Rolety Jagoda stop
                         {
                             rolety.blindsStop(3); //Rolety Jagoda stop
+                            logWrite("Rolety Jagoda stop");
                         };
 
                         if (header.indexOf("GET /24/on") >= 0) //Rolety Jagoda up
                         {
                             rolety.blindsDown(3); //Rolety Jagoda up
+                            logWrite("Rolety Jagoda up");
                         };
 
                         if (header.indexOf("GET /23/on") >= 0) //Rolety Jagoda down
                         {
                             rolety.blindsUp(3); //Rolety Jagoda down
+                            logWrite("Rolety Jagoda down");
                         };
 
                         if (header.indexOf("GET /22/on") >= 0) //Rolety salon ogrod stop
                         {
                             rolety.blindsStop(2); //Rolety salon ogrod stop
+                            logWrite("Rolety salon ogrod stop");
                         };
 
                         if (header.indexOf("GET /21/on") >= 0) //Rolety salon ogrod up
                         {
                             rolety.blindsDown(2); //Rolety salon ogrod up
+                            logWrite("Rolety salon ogrod up");
                         };
 
                         if (header.indexOf("GET /20/on") >= 0) //Rolety salon ogrod down
                         {
                             rolety.blindsUp(2); //Rolety salon ogrod down
+                            logWrite("Rolety salon ogrod down");
                         };
 
                         if (header.indexOf("GET /19/on") >= 0) //Rolety sypialnia stop
                         {
                             rolety.blindsStop(1); //Rolety sypialnia stop
+                            logWrite("Rolety sypialnia stop");
                         };
 
                         if (header.indexOf("GET /18/on") >= 0) //Rolety sypialnia up
                         {
                             rolety.blindsDown(1); //Rolety sypialnia up
+                            logWrite("Rolety sypialnia up");
                         };
 
                         if (header.indexOf("GET /17/on") >= 0) //Rolety sypialnia down
                         {
                             rolety.blindsUp(1); //Rolety sypialnia down
+                            logWrite("Rolety sypialnia down");
                         };
 
                         if (header.indexOf("GET /16/on") >= 0) //Force blinds by light on
                         {
                             roletyLight = 1; //Set automatic blinds down by light
+                            logWrite("Force blinds by light on");
                         };
 
                         if (header.indexOf("GET /16/off") >= 0) //Force blinds by light off
                         {
                             roletyLight = 0; //Set blins down without light trigger
+                            logWrite("Force blinds by light off");
                         };
 
                         if (header.indexOf("GET /15/on") >= 0) //Set light level to close blinds
                         {
                             roletySetLightLevel = roletyCurrentLightLevel;
+                            logWrite("Set light level to close blinds to: " + (String)roletySetLightLevel);
                         };
 
                         if (header.indexOf("GET /14/off") >= 0) //Force Z2 to stop waterring
                         {
                             odliczanie.resetTimer(14); //Just a reset Z2 timer
+                            logWrite("Force Z2 to start waterring");
                         };
 
                         if (header.indexOf("GET /14/on") >= 0)
                         {
                             odliczanie.startTimer((unsigned long int)(podlewanieZ2)*1000, 14); //Start Z2 timer
+                            logWrite("Force Z2 to start waterring");
                         };
-                        if (header.indexOf("GET /13/off") >= 0) //Force Z2 to start waterring
+                        if (header.indexOf("GET /13/off") >= 0) //Force Z1 to start waterring
                         {
                             odliczanie.resetTimer(13); //Just a reset Z1 timer
+                            logWrite("Force Z1 to start waterring");
                         };
 
                         if (header.indexOf("GET /13/on") >= 0) //Force Z1 to start waterring
                         {
                             odliczanie.startTimer((unsigned long int)(podlewanieZ1)*1000, 13); //Start Z1 timer
+                            logWrite("Force Z1 to start waterring");
                         };
                         if (header.indexOf("GET /12/off") >= 0) //Force dropping line to stop waterring
                         {
                             odliczanie.resetTimer(12); //Just a reset dropping line timer
+                            logWrite("Force dropping line to stop waterring");
                         };
 
                         if (header.indexOf("GET /12/on") >= 0) //Forse dropping line to start
                         {
                             odliczanie.startTimer((unsigned long int)(podlewanieDL)*1000, 12); //Start dropping line timer
+                            logWrite("Forse dropping line to start");
                         };
 
                         if (header.indexOf("GET /11/on") >= 0) //Force cycle of watering on
                         {
                             podlewanieCykl = 1; //Set cycle of watering to on
+                            logWrite("Force cycle of watering on");
                         };
 
                         if (header.indexOf("GET /11/off") >= 0) //Force cycle of watering off
                         {
                             podlewanieCykl = 0; //Set cycle of watering to off
+                            logWrite("Force cycle of watering off");
                         };
 
                         if (header.indexOf("GET /10/on") >= 0) //Force autoatering on
                         {
                             podlewanieAuto = true; //Set autowatering on
+                            logWrite("Force autoatering on");
                         };
 
                         if (header.indexOf("GET /10/off") >= 0) //Force autoatering off
                         {
                             podlewanieAuto = false; //Set autowatering off
+                            logWrite("Force autowatering off");
                         };
 
                         if (header.indexOf("GET /9/off") >= 0) //Force downstairs heating to stop
                         {
                             odliczanie.resetTimer(9); //Just a reset timer
+                            logWrite("Force downstairs heating to stop");
                         };
 
                         if (header.indexOf("GET /9/on") >= 0) //Forse downstairs heating start for 10 minutes (or sth :)
                         {
                             odliczanie.startTimer(600000, 9); //Add to the downstairs heating timer 10000ms
+                            logWrite("Forse downstairs heating start for 10 minutes (or sth :)");
                         };
 
                         if (header.indexOf("GET /8/off") >= 0) //Heating downstairs in "Night" mode - lower temp.
                         {
                             ogrzewanieParterDzien = false;      //Heating downstairs in "Night" mode - lower temp.
                             temperaturaParter = temperaturaNoc; //Setting up night temperature upstairs
+                            logWrite("Heating downstairs in ""Night"" mode - lower temp.");
                         };
 
                         if (header.indexOf("GET /8/on") >= 0) //Heating downstairs in "Day" mode - higher temp.
                         {
                             ogrzewanieParterDzien = true;         //Heating downstairs in "Day" mode - higher temp.
                             temperaturaParter = temperaturaDzien; //Setting up day temperature downstairs
+                            logWrite("Heating downstairs in ""Day"" mode - higher temp.");
                         };
 
                         if (header.indexOf("GET /7/off") >= 0) //Force upstairs heating to stop
                         {
                             odliczanie.resetTimer(7); //Just a reset timer
+                            logWrite("Force upstairs heating to stop");
                         };
 
                         if (header.indexOf("GET /7/on") >= 0) //Forse upstairs heating start for 10 minutes (or sth :)
                         {
                             odliczanie.startTimer(600000, 7); //Add to the upstairs heating timer 10000ms
+                            logWrite("Forse upstairs heating start for 10 minutes (or sth :)");
                         };
 
                         if (header.indexOf("GET /6/off") >= 0) //Heating upstairs in "Night" mode - lower temp.
                         {
                             ogrzewaniePietroDzien = false;      //Heating upstairs in "Night" mode - lower temp.
                             temperaturaPietro = temperaturaNoc; //Setting up night temperature upstairs
+                            logWrite("Heating upstairs in ""Night"" mode - lower temp.");
                         };
 
                         if (header.indexOf("GET /6/on") >= 0) //Heating upstairs in "Day" mode - higher temp.
                         {
                             ogrzewaniePietroDzien = true;         //Heating upstairs in "Day" mode - higher temp.
                             temperaturaPietro = temperaturaDzien; //Setting up day temperature upstairs
+                            logWrite("Heating upstairs in ""Day"" mode - higher temp.");
                         };
 
                         if (header.indexOf("GET /5/on") >= 0) //Blins up
@@ -836,6 +905,7 @@ void loop()
                             Serial.println("Rolety w gore");
                             rolety.blindsUp(0);
                             //odliczanie.startTimer(1500, 5); //Only 700ms  - turn off - blinds now using RF
+                            logWrite("All blins up");
                         };
 
                         if (header.indexOf("GET /4/on") >= 0) //Blinds down
@@ -843,35 +913,34 @@ void loop()
                             Serial.println("Rolety w dol");
                             rolety.blindsDown(0);
                             //odliczanie.startTimer(1500, 4); //Only 700ms  - turn off - blinds now using RF
+                            logWrite("All blinds down");
                         };
-                        //if (header.indexOf("GET /4/off") >= 0)
-                        //{
-                        //    opuscRolety = "off";
-                        //   digitalWrite(pin_BD, HIGH);
-                        //};
+
                         if (header.indexOf("GET /3/on") >= 0) //Blinds stop
                         {
-                            Serial.println("Rolety w stop");
+                            Serial.println("Rolety stop");
                             rolety.blindsStop(0);
                             //odliczanie.startTimer(1500, 3); //Only 700ms  - turn off - blinds now using RF
+                            logWrite("All blinds stop");
                         };
 
                         if (header.indexOf("GET /2/on") >= 0) //Blins auto up and down by SunRise and SunSet
                         {
                             //Serial.println("Auto");
                             roletyAuto = true;
-                            //digitalWrite(pin_BS, LOW);  - turn off - blinds now using RF
+                            logWrite("Blins auto up and down by SunRise and SunSet");
                         };
                         if (header.indexOf("GET /2/off") >= 0) //Blins auto off
                         {
                             //Serial.println("Manual");
                             roletyAuto = false;
                             //digitalWrite(pin_BS, HIGH); - turn off - blinds now using RF
+                            logWrite("Blins auto off");
                         };
 
                         if (header.indexOf("GET /zegar/") >= 0)
                         { //Setup clock, clock format: \  
-
+                            logWrite("Setting up clock manually by /zegar/RRRR-MM-DD/HH:MM");
                             zegar.setYear((int)(header.substring(11, 15).toInt()));
                             //Serial.println("Zegar: " + header.substring(11, 15).toInt());
                             zegar.setMonth((byte)(header.substring(16, 18).toInt()));
@@ -900,6 +969,12 @@ void loop()
                             //Set up sunrise and sunset triggers
                             slonce.checkSun(zegar.getSecond(), zegar.getMinute(), zegar.getHour(), zegar.getMonthDay(), zegar.getMonth(), (byte)(zegar.getYear() - 2000), 1);
                         };
+                        if (header.indexOf("GET /lines/") >= 0)
+                        { //Setup clock, clock format: \ 
+                            line_to_show=(int)(header.substring(11, 14));
+                            Serial.println("Number of lines to show changed to :" + (String)line_to_show);
+                            logWrite("Number of lines to show changed to :" + header.substring(11, 14));
+                        }
                         // Display the HTML web page
                         client.println(F("<!DOCTYPE html><html>"));
                         client.println(F("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"));
@@ -1226,7 +1301,7 @@ void loop()
                                     logging.read();                            //Go to the end of file
                                 end_file_position = logging.position();        //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
-                                while (line <= 101)                            //Show only 100 lines
+                                while (line <= line_to_show)                   //Show number of lines stored in variable
                                 {
                                     client.println("<tr><td>" + (String)line + "</td><td>");
                                     //Find the beginning of the line (of beginning of file):
@@ -1294,7 +1369,7 @@ void loop()
                             break;
                         case 6:
                             //show log:
-
+                            client.println("<H5>Logi:</H5>");
                             logging = SD.open("logs.txt"); //open parametrs file
                             if (logging)
                             {
@@ -1313,7 +1388,7 @@ void loop()
                                     logging.read();                            //Go to the end of file
                                 end_file_position = logging.position();        //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
-                                while (line <= 101)                            //Show only 100 lines
+                                while (line <= line_to_show)                   //Show number of lines stored in variable
                                 {
                                     client.println("<tr><td>" + (String)line + "</td><td>");
                                     //Find the beginning of the line (of beginning of file):
@@ -1376,7 +1451,7 @@ void loop()
                             else
                             {
                                 // if the file didn't open, print an error:
-                                client.println("error opening params.txt");
+                                client.println("error opening logs.txt");
                             }
 //------------------------------------------------------------------------------------------
                             /*client.println("<H5>Logi:</H5>");
@@ -1519,16 +1594,19 @@ void loop()
 
     if (podlewanieCykl == 1) //Starting watering cycle
     {
+        logWrite("Watering started in the cycle - 1 - dropping line");
         odliczanie.startTimer((unsigned long int)podlewanieDL * 1000, 12);
         podlewanieCykl = 2;
     };
     if ((!odliczanie.checkTimer(12)) && (podlewanieCykl == 2))
     {
+        logWrite("Watering started in the cycle - 2 - Z1");
         odliczanie.startTimer((unsigned long int)podlewanieZ1 * 1000, 13);
         podlewanieCykl = 3;
     };
     if ((!odliczanie.checkTimer(13)) && (podlewanieCykl == 3))
     {
+        logWrite("Watering started in the cycle - 3 - Z2");
         odliczanie.startTimer((unsigned long int)podlewanieZ2 * 1000, 14);
         podlewanieCykl = 0;
     }
@@ -1540,17 +1618,20 @@ void loop()
     if ((trigger(1)) && (roletyAuto)) //Auto blins up if it is on
     {
         Serial.println("Rolety w gore by trigger");
+        logWrite("Auto all blinds up by trigger");
         rolety.blindsUp(0); //Rolety w gore
     };
     if ((trigger(2)) && (roletyAuto)) //Auto blins up if it is on
     {
         Serial.println("Rolety w dol by trigger");
+        logWrite("Auto all blinds down by trigger");
         rolety.blindsDown(0); //Rolety w dol
     };
 
     if (trigger(3) && (podlewanieAuto) && (!podlewanieRainSensor)) //Auto watering is inside the trigger, and we have no rain :)
     {
-        //Serial.println("Starutjemy cykl podlewania");
+        Serial.println("Starutjemy cykl podlewania");
+        logWrite("Auto watering, and we have no rain :)");
         podlewanieCykl = 1;
     };
 
@@ -1629,7 +1710,7 @@ boolean trigger(int number)
 
         if ((roletyCurrentLightLevel == roletySetLightLevel) && (!odliczanie.checkTimer(15)) && (roletyLight)) //If it is dark
         {
-            //Serial.println("Trigger: jest ciemno!");
+            logWrite("Auto all blinds down becouse of low light level - it is locked for ");
             odliczanie.startTimer(3600000, 15); //Locking trigger to start one time.
             return true;
         }
@@ -1654,7 +1735,7 @@ boolean trigger(int number)
         }
         break;
     case 4:
-        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute() + 5) && (zegar.getSecond() == 0) && (!gardenLights)) //If we have 5 minutes after Sun set and gardenLights are off:)
+        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute() + 5) && (zegar.getSecond() == 0) && (!gardenLights) && (gardenLightsAuto)) //If we have 5 minutes after Sun set and gardenLights are off:)
         {
             gardenLights = true;
             return true;
@@ -1662,7 +1743,7 @@ boolean trigger(int number)
         return false;
         break;
     case 5:
-        if ((zegar.getHour() == gardenLightsOffHour) && (zegar.getMinute() == gardenLightsOffMinute) && (zegar.getSecond() == 0) && (gardenLights)) //If we have 10 minutes past 2AM :)
+        if ((zegar.getHour() == gardenLightsOffHour) && (zegar.getMinute() == gardenLightsOffMinute) && (zegar.getSecond() == 0) && (gardenLights) && (gardenLightsAuto)) //If we have 10 minutes past 2AM :)
         {
             gardenLights = false;
             return true;
@@ -1698,18 +1779,14 @@ void sendNTPpacket(const char *address)
 boolean logWrite(String info)
 {
     Serial.println("Writing log info...");
-    logging = SD.open("log.txt", FILE_WRITE); //Open log file in SD card
+    logging = SD.open("logs.txt", FILE_WRITE); //Open log file in SD card
     if (!logging)
-        Serial.println("Error opening param.txt"); //Write about opening errors, if any.
+    {
+        Serial.println("Error opening logs.txt"); //Write about opening errors, if any.
+        return false;
+    }
     logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
     Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
     logging.close();
-    if (logging)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    };
+    return true;
 }
