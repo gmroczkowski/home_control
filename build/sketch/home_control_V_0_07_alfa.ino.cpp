@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #line 1 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
-/*
+  /*
   Web Server
 
   A simple web server that shows the value of the analog input pins.
@@ -112,6 +112,7 @@ int roletyCurrentLightLevel = 600; //Set light level
 
 boolean gardenLights = false;    //Garden lights variable
 boolean gardenLightsAuto = true; //Auto on for gardern lights
+byte gardenLightsMinutesOffset=10; //The garden light will start after the sunset
 byte gardenLightsOffHour = 2;    //Hour to off gardenLights
 byte gardenLightsOffMinute = 10; //Minutes to off gardenLights
 
@@ -179,7 +180,7 @@ const long timeoutTime = 2000;
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
 byte mac[] = {
-    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
+    0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xEA};
 IPAddress ip(172, 26, 160, 16);
 IPAddress dns(172, 26, 160, 254);
 IPAddress gateway(172, 26, 160, 254);
@@ -203,15 +204,15 @@ void sendNTPpacket(const char *address);
 
 File logging; //write log to SD card
 
-#line 204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 205 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup();
-#line 387 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 388 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 1666 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1667 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 1773 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1775 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean logWrite(String info);
-#line 204 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 205 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
 {
 
@@ -842,7 +843,7 @@ void loop()
                             logWrite("Force autoatering on");
                         };
 
-                        if (header.indexOf("GET /10/off") >= 0) //Force autoatering off
+                        if (header.indexOf("GET /10/off") >= 0) //Force autowatering off
                         {
                             podlewanieAuto = false; //Set autowatering off
                             logWrite("Force autowatering off");
@@ -1738,7 +1739,8 @@ boolean trigger(int number)
         }
         break;
     case 4:
-        if ((zegar.getHour() == slonce.sunSetHour()) && (zegar.getMinute() == slonce.sunSetMinute() + 10) && (zegar.getSecond() == 0) && (!gardenLights) && (gardenLightsAuto)) //If we have 5 minutes after Sun set and gardenLights are off:)
+        //Serial.println((slonce.sunSetMinute()+gardenLightsMinutesOffset) % 60);
+        if (((zegar.getHour() == slonce.sunSetHour())||(zegar.getHour() == slonce.sunSetHour()+1)) && (zegar.getMinute() == ((slonce.sunSetMinute()+gardenLightsMinutesOffset) % 60)) && (zegar.getSecond() == 0) && (!gardenLights) && (gardenLightsAuto)) //If we have 5 minutes after Sun set and gardenLights are off:)
         {
             gardenLights = true;
             logWrite("Auto gardenLights on - 10 minutes after SunSet");
@@ -1793,5 +1795,6 @@ boolean logWrite(String info)
     logging.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
     Serial.println(zegar.getDate() + ";" + zegar.getTime() + ";" + info);
     logging.close();
+    zegar.Flow();
     return true;
 }
