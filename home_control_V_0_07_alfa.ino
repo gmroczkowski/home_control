@@ -93,7 +93,7 @@ DS18B20 sensors(&onewire); //Dallas temperature sensors
 
 unsigned long uptime; //uptime :)
 
-int line_to_show=100;           //How much line should be shown in parameters of logs
+int line_to_show=150;           //How much line should be shown in parameters of logs
 
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Blinds\Blinds.cpp>
@@ -960,10 +960,10 @@ void loop()
                             slonce.checkSun(zegar.getSecond(), zegar.getMinute(), zegar.getHour(), zegar.getMonthDay(), zegar.getMonth(), (byte)(zegar.getYear() - 2000), 1);
                         };
                         if (header.indexOf("GET /lines/") >= 0)
-                        { //Setup clock, clock format: \ 
-                            line_to_show=(int)((header.substring(11, 14)));
-                            Serial.println("Number of lines to show changed to :" + (String)line_to_show);
-                            logWrite("Number of lines to show changed to :" + header.substring(11, 14));
+                        { 
+                            line_to_show=header.substring(11, 14).toInt();
+                            Serial.println("Number of lines to show changed to :" + (String)line_to_show + "E");
+                            logWrite("Number of lines to show changed to :" + header.substring(11, 14)+ "E");
                         }
                         // Display the HTML web page
                         client.println(F("<!DOCTYPE html><html>"));
@@ -1288,7 +1288,10 @@ void loop()
                                 int line = 1; //Row counts in table
                                 char ch = 0;  //Char to show
                                 while (logging.available())
+                                {
                                     logging.read();                            //Go to the end of file
+                                    zegar.Flow();
+                                }
                                 end_file_position = logging.position();        //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
                                 while (line <= line_to_show)                   //Show number of lines stored in variable
@@ -1375,7 +1378,10 @@ void loop()
                                 int line = 1; //Row counts in table
                                 char ch = 0;  //Char to show
                                 while (logging.available())
+                                {
                                     logging.read();                            //Go to the end of file
+                                    zegar.Flow();
+                                }
                                 end_file_position = logging.position();        //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
                                 while (line <= line_to_show)                   //Show number of lines stored in variable
@@ -1728,7 +1734,6 @@ boolean trigger(int number)
         }
         break;
     case 4:
-        Serial.println((slonce.sunSetMinute()+gardenLightsMinutesOffset) % 60);
         if (((zegar.getHour() == slonce.sunSetHour())||(zegar.getHour() == slonce.sunSetHour()+1)) && (zegar.getMinute() == ((slonce.sunSetMinute()+gardenLightsMinutesOffset) % 60)) && (zegar.getSecond() == 0) && (!gardenLights) && (gardenLightsAuto)) //If we have 5 minutes after Sun set and gardenLights are off:)
         {
             gardenLights = true;

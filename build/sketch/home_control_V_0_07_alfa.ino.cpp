@@ -95,7 +95,7 @@ DS18B20 sensors(&onewire); //Dallas temperature sensors
 
 unsigned long uptime; //uptime :)
 
-int line_to_show=100;           //How much line should be shown in parameters of logs
+int line_to_show=150;           //How much line should be shown in parameters of logs
 
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\sunState.cpp>
 #include <C:\Users\gmroczkowski\Documents\Arduino\libraries\Blinds\Blinds.cpp>
@@ -208,9 +208,9 @@ File logging; //write log to SD card
 void setup();
 #line 388 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void loop();
-#line 1667 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1678 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean trigger(int number);
-#line 1775 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
+#line 1785 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 boolean logWrite(String info);
 #line 205 "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\home_control_V_0_07_alfa.ino"
 void setup()
@@ -972,9 +972,14 @@ void loop()
                         };
                         if (header.indexOf("GET /lines/") >= 0)
                         { //Setup clock, clock format: \ 
-                            line_to_show=(int)((header.substring(11, 14)));
-                            Serial.println("Number of lines to show changed to :" + (String)line_to_show);
-                            logWrite("Number of lines to show changed to :" + header.substring(11, 14));
+
+                            //int a=100*header.substring(11, 12).toInt()+10*header.substring(12, 13).toInt()+header.substring(13, 14).toInt();
+                            //int a=header.substring(11, 14).toInt();
+                            //line_to_show=a;
+                            line_to_show=header.substring(11, 14).toInt();
+                            //Serial.println("Number of lines to show changed to :" + (String)a + "E");
+                            Serial.println("Number of lines to show changed to :" + (String)line_to_show + "E");
+                            logWrite("Number of lines to show changed to :" + header.substring(11, 14)+ "E");
                         }
                         // Display the HTML web page
                         client.println(F("<!DOCTYPE html><html>"));
@@ -1299,7 +1304,10 @@ void loop()
                                 int line = 1; //Row counts in table
                                 char ch = 0;  //Char to show
                                 while (logging.available())
+                                {
                                     logging.read();                            //Go to the end of file
+                                    zegar.Flow();
+                                }
                                 end_file_position = logging.position();        //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
                                 while (line <= line_to_show)                   //Show number of lines stored in variable
@@ -1386,7 +1394,10 @@ void loop()
                                 int line = 1; //Row counts in table
                                 char ch = 0;  //Char to show
                                 while (logging.available())
+                                {
                                     logging.read();                            //Go to the end of file
+                                    zegar.Flow();
+                                }
                                 end_file_position = logging.position();        //Remember the last position
                                 current_file_position = end_file_position - 2; //Set the current position to the end of file
                                 while (line <= line_to_show)                   //Show number of lines stored in variable
@@ -1739,11 +1750,10 @@ boolean trigger(int number)
         }
         break;
     case 4:
-        //Serial.println((slonce.sunSetMinute()+gardenLightsMinutesOffset) % 60);
         if (((zegar.getHour() == slonce.sunSetHour())||(zegar.getHour() == slonce.sunSetHour()+1)) && (zegar.getMinute() == ((slonce.sunSetMinute()+gardenLightsMinutesOffset) % 60)) && (zegar.getSecond() == 0) && (!gardenLights) && (gardenLightsAuto)) //If we have 5 minutes after Sun set and gardenLights are off:)
         {
             gardenLights = true;
-            logWrite("Auto gardenLights on - 10 minutes after SunSet");
+            logWrite("Auto gardenLights on - gardenLightsMinutesOffset minutes after SunSet");
             return true;
         }
         return false;
