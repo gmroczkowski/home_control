@@ -7,7 +7,7 @@
   {
     "Sourcefile": null,
     "Include": "",
-    "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\standard"
+    "Includepath": "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\variants\\mega"
   },
   {
     "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
@@ -33,6 +33,16 @@
     "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
     "Include": "DS18B20.h",
     "Includepath": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\DS18B20"
+  },
+  {
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Include": "TimeLib.h",
+    "Includepath": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\Time-master"
+  },
+  {
+    "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
+    "Include": "SD.h",
+    "Includepath": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src"
   },
   {
     "Sourcefile": "c:\\Users\\gmroczkowski\\Documents\\Arduino\\home_control\\build\\sketch\\home_control_V_0_07_alfa.ino.cpp",
@@ -96,6 +106,41 @@
   },
   {
     "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\DS18B20\\DS18B20.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\Time-master\\DateStrings.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Users\\gmroczkowski\\Documents\\Arduino\\libraries\\Time-master\\Time.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\File.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\SD.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\Sd2Card.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\SdFile.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "C:\\Program Files (x86)\\Arduino\\libraries\\SD\\src\\utility\\SdVolume.cpp",
     "Include": "",
     "Includepath": null
   }
